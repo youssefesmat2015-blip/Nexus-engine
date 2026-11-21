@@ -1,0 +1,2852 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nexus 3D Engine — Low-Poly Props, Action FX &amp; Free Camera</title>
+  <link rel="stylesheet" href="engine.css" />
+  <style>
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: #21262d;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .tab-btn.active {
+      background: #1f6feb;
+      color: #ffffff;
+      border-color: #58a6ff;
+    }
+    .timeline-box {
+      width: 100%;
+      max-width: 760px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .keyframe-strip {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      padding: 6px;
+      background: #0d1117;
+      border-radius: 6px;
+      min-height: 36px;
+      align-items: center;
+    }
+    .kf-chip {
+      background: #9e6a03;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .cine-chip {
+      background: #1f6feb;
+      color: #fff;
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cine-chip button {
+      background: transparent;
+      border: none;
+      color: #ff7b72;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 0;
+      font-size: 12px;
+    }
+    .lowpoly-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .action-fx-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sub-workspace {
+      display: none;
+      padding: 16px;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+    .two-col-grid {
+      display: grid;
+      grid-template-columns: 345px 1fr;
+      gap: 16px;
+    }
+    canvas#paintCanvas,
+    canvas#modelPreviewCanvas {
+      background: #0d1117;
+      border: 2px solid #30363d;
+      border-radius: 10px;
+      display: block;
+    }
+    canvas#paintCanvas { cursor: crosshair; }
+    canvas#modelPreviewCanvas { cursor: grab; }
+
+    .viewport-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 760px;
+    }
+    .viewport-wrapper.play-fullscreen {
+      position: fixed;
+      inset: 0;
+      max-width: 100vw;
+      width: 100vw;
+      height: 100vh;
+      z-index: 9999;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .viewport-wrapper.play-fullscreen canvas#view3d {
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: 100vw !important;
+      border-radius: 0;
+      border: none;
+    }
+    .viewport-wrapper.hide-cursor,
+    .viewport-wrapper.hide-cursor * {
+      cursor: none !important;
+    }
+
+    .play-hud-top {
+      display: none;
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      z-index: 25;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+    .viewport-wrapper.play-fullscreen .play-hud-top {
+      display: flex;
+    }
+    .play-hud-top button,
+    .play-hud-top span {
+      pointer-events: auto;
+    }
+
+    .in-game-menu {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      background: rgba(9, 12, 16, 0.84);
+      backdrop-filter: blur(4px);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      text-align: center;
+      padding: 20px;
+    }
+    .in-game-menu.active {
+      display: flex;
+    }
+    .menu-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 14px;
+      padding: 26px 34px;
+      min-width: 280px;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .mobile-controls-overlay {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      pointer-events: none;
+      z-index: 15;
+    }
+    .mobile-pad {
+      display: grid;
+      grid-template-columns: repeat(3, 44px);
+      grid-template-rows: repeat(2, 44px);
+      gap: 6px;
+      pointer-events: auto;
+    }
+    .mob-btn {
+      background: rgba(31, 111, 235, 0.55);
+      border: 1px solid rgba(121, 192, 255, 0.75);
+      color: #ffffff;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: bold;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      touch-action: none;
+    }
+    .mob-btn:active {
+      background: rgba(56, 139, 253, 0.92);
+      transform: scale(0.95);
+    }
+    .mob-jump-btn {
+      pointer-events: auto;
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: rgba(210, 153, 34, 0.72);
+      border: 2px solid #f2cc60;
+      color: #fff;
+      font-weight: bold;
+      font-size: 13px;
+      user-select: none;
+      touch-action: none;
+    }
+    .mob-jump-btn:active {
+      background: rgba(242, 204, 96, 0.95);
+      color: #0d1117;
+    }
+    .cam-sliders-bar {
+      width: 100%;
+      max-width: 760px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <!-- الشريط العلوي -->
+  <div id="engineHeader" class="topbar">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <strong>Nexus 3D Engine</strong>
+      <div class="nav-tabs">
+        <button id="tabSceneBtn" type="button" class="tab-btn active" onclick="switchTab('scene')">
+          مشهد 3D (Scene)
+        </button>
+        <button id="tabModelBtn" type="button" class="tab-btn" onclick="switchTab('modeling')">
+          Modeling (تشكيل Shape)
+        </button>
+        <button id="tabPaintBtn" type="button" class="tab-btn" onclick="switchTab('paint')">
+          Paint (رسم الشخصية)
+        </button>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <button type="button" class="btn-primary" style="padding:6px 14px;" onclick="startPlayMode()">
+        ▶ Play Game (تجربة Fullscreen)
+      </button>
+      <button type="button" class="btn-warn" style="padding:6px 14px;" onclick="buildGameDownload()">
+        📦 Build (تحميل اللعبة)
+      </button>
+    </div>
+  </div>
+
+  <!-- صفحة 1: مشهد 3D -->
+  <div id="sceneView" class="workspace">
+    <!-- العمود الأيمن -->
+    <div>
+      <div class="panel">
+        <h3>إضافة وحذف Objects</h3>
+        <div class="object-buttons">
+          <button type="button" class="btn-accent" onclick="addObject('character')">+ شخصية (Player)</button>
+          <button type="button" class="btn-accent" onclick="addObject('cube')">+ مكعب تصادم 3D</button>
+          <button type="button" class="btn-accent" onclick="addObject('platform')">+ منصة مرتفعة</button>
+          <button type="button" class="btn-accent" onclick="addObject('terrain')">+ سطح حفر/تصميم</button>
+        </div>
+
+        <div style="font-size:12px; color:#79c0ff; margin-bottom:6px; font-weight:bold;">
+          مجسمات Low-Poly جاهزة (اضغط لإضافتها):
+        </div>
+        <div class="lowpoly-grid">
+          <button type="button" class="btn-warn" style="font-size:11px; padding:6px;" onclick="spawnLowPolyPreset('tree')">🌲 شجرة Low-Poly</button>
+          <button type="button" class="btn-warn" style="font-size:11px; padding:6px;" onclick="spawnLowPolyPreset('rock')">🪨 صخرة Low-Poly</button>
+          <button type="button" class="btn-warn" style="font-size:11px; padding:6px;" onclick="spawnLowPolyPreset('pillar')">🏛 عمود Low-Poly</button>
+          <button type="button" class="btn-warn" style="font-size:11px; padding:6px;" onclick="spawnLowPolyPreset('crystal')">💎 كريستال Low-Poly</button>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+          <button type="button" class="btn-danger" style="flex:1; font-size:12px;" onclick="deleteSelectedObject()">
+            🗑 حذف الكائن المحدد (Delete)
+          </button>
+          <button type="button" class="btn-danger" style="font-size:12px;" onclick="deleteAllObjects()">
+            حذف الكل
+          </button>
+        </div>
+
+        <div style="font-size:12px; color:#8b949e; margin-bottom:6px;">كائنات المشهد:</div>
+        <div id="sceneList" class="scene-list"></div>
+      </div>
+
+      <!-- إعدادات الـ Main Menu -->
+      <div class="panel">
+        <h3>إعدادات الـ Main Menu (القائمة الرئيسية)</h3>
+        <label style="font-size:12px;">اسم اللعبة في القائمة</label>
+        <input id="menuTitleInput" type="text" value="مغامرة نيكسوس 3D" oninput="syncMenuSettings()" />
+
+        <label style="font-size:12px;">زر البدء</label>
+        <input id="menuStartTextInput" type="text" value="ابدأ اللعبة" oninput="syncMenuSettings()" />
+
+        <label><input id="enableMainMenuCheck" type="checkbox" checked onchange="syncMenuSettings()" /> إظهار Main Menu عند بدء اللعب</label>
+      </div>
+
+      <!-- توسيع الماب والأرضية والـ Skybox -->
+      <div class="panel">
+        <h3>توسيع الماب والأرضية والـ Skybox</h3>
+        <label style="font-size:12px;">
+          توسيع الماب (Map Scale): <strong id="groundSizeVal">600</strong>
+        </label>
+        <input id="groundSizeSlider" type="range" min="240" max="3000" step="60" value="600" oninput="updateEnvironment()" />
+
+        <label style="font-size:12px;">لون أرضية الماب</label>
+        <input id="groundColorInput" type="color" value="#1e293b" oninput="updateEnvironment()" style="height:34px; padding:2px;" />
+
+        <label style="font-size:12px;">اختيار السكاي بوكس (Skybox)</label>
+        <select id="skyboxSelect" onchange="updateEnvironment()">
+          <option value="day">سماء نهارية صافية (Clear Day)</option>
+          <option value="sunset">غروب سينمائي (Golden Sunset)</option>
+          <option value="night">ليل ونجوم (Starry Night)</option>
+          <option value="cyber">فضاء سايبر نيون (Cyber Space)</option>
+          <option value="studio">استوديو داكن (Dark Editor)</option>
+        </select>
+      </div>
+
+      <div class="panel">
+        <h3>Inspector الكائن والسكريبت الإجباري</h3>
+        <div id="inspectorBody" style="font-size:12px; line-height:1.8; color:#c9d1d9;"></div>
+      </div>
+
+      <div class="panel">
+        <h3>محاور الـ 3D (X, Y, Z) والفيزياء</h3>
+        <div class="axis-grid">
+          <div class="axis-box">
+            <label class="x-label" for="posX">محور X</label>
+            <input id="posX" type="number" step="5" value="0" oninput="updateSelectedTransform()" />
+          </div>
+          <div class="axis-box">
+            <label class="y-label" for="posY">محور Y (ارتفاع)</label>
+            <input id="posY" type="number" step="5" value="0" oninput="updateSelectedTransform()" />
+          </div>
+          <div class="axis-box">
+            <label class="z-label" for="posZ">محور Z (عمق)</label>
+            <input id="posZ" type="number" step="5" value="0" oninput="updateSelectedTransform()" />
+          </div>
+        </div>
+        <div style="margin-top:8px; display:flex; gap:12px; font-size:12px;">
+          <label><input id="useGravity" type="checkbox" checked onchange="togglePhysicsFlags()" /> الجاذبية</label>
+          <label><input id="useCollision" type="checkbox" checked onchange="togglePhysicsFlags()" /> التصادم</label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>نظام الحفر والتصميم (Sculpt &amp; Carve)</h3>
+        <select id="sculptMode" onchange="updateSculpt()">
+          <option value="none">بدون تشكيل</option>
+          <option value="carve">حفر للداخل (Carve)</option>
+          <option value="extrude">بروز للخارج (Extrude)</option>
+          <option value="bevel">قص وتصميم هندسي (Bevel)</option>
+        </select>
+        <label style="font-size:12px;">عمق التشكيل (<span id="sculptDepthVal">12</span>)</label>
+        <input id="sculptDepth" type="range" min="2" max="35" value="12" oninput="updateSculpt()" />
+      </div>
+    </div>
+
+    <!-- المنتصف: منفذ 3D + أنيميشنز جاهزة للأكشن/الانتقال + Cinematic Camera + Main Menu -->
+    <div class="viewport-box">
+      <div style="width:100%; max-width:760px; display:flex; justify-content:space-between; font-size:12px; color:#8b949e; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+        <span>اسحب لتغيير زاوية الكاميرا (تخترق الأرض عادي) • W/S قدام وورا • أزرار الموبايل</span>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:4px; color:#7ee787; font-weight:bold;">
+            <input id="toggleCameraFollow" type="checkbox" checked onchange="toggleCameraFollow()" /> Camera Follow
+          </label>
+          <label style="display:flex; align-items:center; gap:4px; color:#c9d1d9;">
+            <input id="toggleMobileHud" type="checkbox" checked onchange="toggleMobileControlsUI()" /> أزرار الموبايل
+          </label>
+          <button type="button" class="btn-accent" style="padding:3px 8px; font-size:11px;" onclick="resetCamera()">إعادة الكاميرا</button>
+        </div>
+      </div>
+
+      <div id="viewportWrapper" class="viewport-wrapper">
+        <!-- شاشة Main Menu داخل اللعبة -->
+        <div id="inGameMenu" class="in-game-menu">
+          <div class="menu-card">
+            <h2 id="menuDisplayTitle" style="color:#79c0ff; margin:0;">مغامرة نيكسوس 3D</h2>
+            <p style="font-size:12px; color:#8b949e; margin:0;">القائمة الرئيسية للعبة (Main Menu)</p>
+            <button id="menuDisplayStartBtn" type="button" class="btn-primary" style="padding:10px; font-size:15px;" onclick="closeMainMenuAndPlay()">
+              ابدأ اللعبة
+            </button>
+            <button type="button" class="btn-accent" style="padding:8px; font-size:12px;" onclick="playCustomCinematic(); closeMainMenuAndPlay();">
+              🎬 تشغيل Cutscene بتصميمك ثم ابدأ
+            </button>
+            <button type="button" class="btn-danger" style="padding:8px; font-size:12px;" onclick="stopPlayMode()">
+              خروج من وضع اللعب
+            </button>
+          </div>
+        </div>
+
+        <!-- شريط علوي أثناء اللعب Fullscreen -->
+        <div class="play-hud-top">
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <span style="background:rgba(13,17,23,0.8); padding:6px 12px; border-radius:8px; border:1px solid #30363d; font-size:12px;">
+              🎮 اللعب نشط • كليك يمين أو ESC لإظهار الماوس
+            </span>
+            <button type="button" class="btn-accent" style="padding:6px 10px; font-size:12px;" onclick="toggleMouseVisibility()">
+              🖱 إظهار/إخفاء الماوس
+            </button>
+            <button type="button" class="btn-warn" style="padding:6px 10px; font-size:12px;" onclick="triggerFireAttack()">
+              🔥 نار بتضرب
+            </button>
+            <button type="button" class="btn-accent" style="padding:6px 10px; font-size:12px;" onclick="triggerFastDash()">
+              ⚡ حركة سريعة
+            </button>
+            <button type="button" class="btn-primary" style="padding:6px 10px; font-size:12px;" onclick="triggerTeleport()">
+              🌀 تيليبورت
+            </button>
+            <button type="button" class="btn-warn" style="padding:6px 10px; font-size:12px;" onclick="openMainMenu()">
+              ☰ Main Menu
+            </button>
+          </div>
+          <button type="button" class="btn-danger" style="padding:8px 16px; font-size:13px;" onclick="stopPlayMode()">
+            ⏹ إيقاف اللعب والخروج من Fullscreen
+          </button>
+        </div>
+
+        <canvas id="view3d" width="760" height="420"></canvas>
+
+        <div id="mobileControlsOverlay" class="mobile-controls-overlay">
+          <div class="mobile-pad">
+            <div></div>
+            <button type="button" class="mob-btn"
+              onpointerdown="holdControl('forward', true)" onpointerup="holdControl('forward', false)" onpointerleave="holdControl('forward', false)">▲</button>
+            <div></div>
+            <button type="button" class="mob-btn"
+              onpointerdown="holdControl('left', true)" onpointerup="holdControl('left', false)" onpointerleave="holdControl('left', false)">◀</button>
+            <button type="button" class="mob-btn"
+              onpointerdown="holdControl('backward', true)" onpointerup="holdControl('backward', false)" onpointerleave="holdControl('backward', false)">▼</button>
+            <button type="button" class="mob-btn"
+              onpointerdown="holdControl('right', true)" onpointerup="holdControl('right', false)" onpointerleave="holdControl('right', false)">▶</button>
+          </div>
+
+          <button type="button" class="mob-jump-btn" onpointerdown="triggerJump()">
+            JUMP
+          </button>
+        </div>
+      </div>
+
+      <!-- شريط تحكم مباشر بزاوية الكاميرا (Yaw + Pitch تخترق الأرض + Zoom) -->
+      <div class="cam-sliders-bar">
+        <div>
+          <label style="font-size:11px; color:#79c0ff;">زاوية الدوران (Yaw): <strong id="camYawDeg">32</strong>°</label>
+          <input id="camYawSlider" type="range" min="-180" max="180" step="2" value="32" oninput="setCameraFromSliders()" style="margin:2px 0 0 0;" />
+        </div>
+        <div>
+          <label style="font-size:11px; color:#7ee787;">ميل الكاميرا (Pitch حر/تحت الأرض): <strong id="camPitchDeg">28</strong>°</label>
+          <input id="camPitchSlider" type="range" min="-90" max="90" step="1" value="28" oninput="setCameraFromSliders()" style="margin:2px 0 0 0;" />
+        </div>
+        <div>
+          <label style="font-size:11px; color:#ffa657;">قرب الكاميرا (Zoom): <strong id="camZoomVal">1.55</strong>x</label>
+          <input id="camZoomSlider" type="range" min="0.5" max="2.6" step="0.05" value="1.55" oninput="setCameraFromSliders()" style="margin:2px 0 0 0;" />
+        </div>
+      </div>
+
+      <!-- أنيميشنز جاهزة للأكشن والانتقال (نار بتضرب، حركة سريعة، تيليبورت) -->
+      <div class="timeline-box" style="margin-top:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <strong style="color:#ff7b72; font-size:13px;">⚡ أنيميشنز جاهزة للأكشن والانتقال (على الكائن المحدد)</strong>
+          <label style="font-size:11px; color:#ffa657;">
+            <input id="autoFireLoopCheck" type="checkbox" onchange="toggleAutoFireLoop()" /> إطلاق نار تلقائي متكرر
+          </label>
+        </div>
+        <div class="action-fx-grid">
+          <button type="button" class="btn-danger" style="padding:7px 8px; font-size:12px;" onclick="triggerFireAttack()">
+            🔥 أنيميشن نار بتضرب
+          </button>
+          <button type="button" class="btn-warn" style="padding:7px 8px; font-size:12px;" onclick="triggerFastDash()">
+            ⚡ أنيميشن حركة سريعة
+          </button>
+          <button type="button" class="btn-primary" style="padding:7px 8px; font-size:12px;" onclick="triggerTeleport()">
+            🌀 أنيميشن تيليبورت (انتقال)
+          </button>
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <div>الكائن النشط: <strong id="activeObjLabel">لا يوجد</strong></div>
+        <div>التصادم: <strong id="collisionStatus" style="color:#7ee787;">على الأرضية</strong></div>
+        <div>السكريبت: <span id="mandatoryStatus" class="mandatory-tag">غير مربوط</span></div>
+      </div>
+
+      <!-- مصمم Cinematic Camera الخاص بالمستخدم -->
+      <div class="timeline-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <strong style="color:#ffa657; font-size:14px;">🎬 مصمم Cinematic Camera (إنت اللي بتعمل المشهد السينمائي)</strong>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button type="button" class="btn-accent" style="padding:5px 10px; font-size:12px;" onclick="addCurrentCameraAsWaypoint()">
+              + حفظ زاوية الكاميرا الحالية كنقطة
+            </button>
+            <button id="cineRunBtn" type="button" class="btn-warn" style="padding:5px 10px; font-size:12px;" onclick="toggleCustomCinematic()">
+              ▶ تشغيل Cutscene اللي صممته
+            </button>
+            <button type="button" class="btn-danger" style="padding:5px 10px; font-size:12px;" onclick="clearCinematicWaypoints()">
+              مسح النقاط
+            </button>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-top:10px; font-size:11px;">
+          <div>
+            <label>Yaw (°)</label>
+            <input id="wpYawInput" type="number" step="5" value="65" />
+          </div>
+          <div>
+            <label>Pitch (° حر)</label>
+            <input id="wpPitchInput" type="number" min="-90" max="90" step="2" value="-15" />
+          </div>
+          <div>
+            <label>Zoom</label>
+            <input id="wpZoomInput" type="number" min="0.5" max="2.6" step="0.1" value="1.6" />
+          </div>
+          <div>
+            <label>مدة الانتقال (ثانية)</label>
+            <input id="wpDurInput" type="number" min="0.4" max="10" step="0.5" value="2.0" />
+          </div>
+        </div>
+
+        <button type="button" class="btn-primary" style="width:100%; padding:6px; font-size:12px; margin-top:4px;" onclick="addCustomWaypointFromInputs()">
+          + إضافة نقطة Cutscene بالقيم اللي كتبتها
+        </button>
+
+        <div id="cineWaypointList" class="keyframe-strip">
+          <span style="font-size:11px; color:#8b949e;">لا توجد نقاط Cutscene بعد — غيّر زاوية الكاميرا واضغط "+ حفظ زاوية الكاميرا الحالية كنقطة" أو أضف نقطة يدوياً.</span>
+        </div>
+      </div>
+
+      <!-- نظام Keyframes زي Blender + AI Auto-Animate للكائنات -->
+      <div class="timeline-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <strong style="color:#79c0ff; font-size:14px;">Blender Keyframes Timeline (أنيميشن الكائن)</strong>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button type="button" class="btn-warn" style="padding:5px 10px; font-size:12px;" onclick="insertKeyframe()">
+              + إضافة Keyframe (I)
+            </button>
+            <button type="button" class="btn-primary" style="padding:5px 10px; font-size:12px;" onclick="toggleTimelinePlay()">
+              ▶ تشغيل / إيقاف
+            </button>
+            <button type="button" class="btn-accent" style="padding:5px 10px; font-size:12px;" onclick="generateAIAnimation()">
+              ✨ AI أنيميشن تلقائي
+            </button>
+            <button type="button" class="btn-danger" style="padding:5px 10px; font-size:12px;" onclick="clearKeyframes()">
+              مسح الكل
+            </button>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
+          <span style="font-size:12px;">الإطار: <strong id="currentFrameLabel">0</strong> / 120</span>
+          <input id="timelineSlider" type="range" min="0" max="120" value="0" style="flex:1; margin:0;" oninput="scrubTimeline(this.value)" />
+        </div>
+
+        <div id="keyframeStrip" class="keyframe-strip">
+          <span style="font-size:11px; color:#8b949e;">لا توجد Keyframes بعد — حرّك الكائن واضغط "+ إضافة Keyframe" أو استخدم AI.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- العمود الأيسر: ستوديو الماتيريالز والتكتشر + السكريبتات الإجبارية -->
+    <div>
+      <div class="panel">
+        <h3>ستوديو الماتيريالز والتكتشر (Materials &amp; Textures)</h3>
+        <label style="font-size:12px;">اسم الماتيريال</label>
+        <input id="matName" type="text" value="Hero_Shader_01" />
+
+        <label style="font-size:12px;">لون الماتيريال الأساسي</label>
+        <input id="matColor" type="color" value="#3fb950" onchange="applyMaterial()" style="height:36px; padding:2px;" />
+
+        <label style="font-size:12px;">نمط تكتشر جاهز (Procedural Texture)</label>
+        <select id="texturePreset" onchange="applyProceduralTexture()">
+          <option value="none">بدون تكتشر (لون صافي)</option>
+          <option value="checker">بلاط شطرنجي (Checker Grid)</option>
+          <option value="bricks">طوب هندسي (Brick Wall)</option>
+          <option value="metal">معدن مخطط (Brushed Metal)</option>
+          <option value="grass">عشب وطبيعة (Grass Pattern)</option>
+        </select>
+
+        <label style="font-size:12px;">أو ارفع صورة تكتشر من جهازك (Image Texture)</label>
+        <input id="textureUpload" type="file" accept="image/*" onchange="uploadTextureFile(event)" style="font-size:11px;" />
+
+        <div style="display:flex; gap:6px; margin-bottom:8px;">
+          <button type="button" class="btn-accent" style="flex:1; font-size:11px;" onclick="applyCurrentTextureToGround()">
+            تطبيق التكتشر على الأرضية
+          </button>
+          <button type="button" class="btn-danger" style="font-size:11px;" onclick="clearObjectTexture()">
+            إزالة التكتشر
+          </button>
+        </div>
+
+        <label style="font-size:12px;">اللمعان (<span id="matShineVal">60</span>%)</label>
+        <input id="matShine" type="range" min="0" max="100" value="60" oninput="applyMaterial()" />
+      </div>
+
+      <div class="panel">
+        <h3>إضافة سكريبت (إجباري على الكائن)</h3>
+        <label style="font-size:13px; color:#ffa657; font-weight:bold;">
+          سؤال إجباري: هل السكريبت بلغة Java أم C++؟
+        </label>
+        <select id="scriptLang" onchange="loadPresetForLanguage()">
+          <option value="">-- اختر لغة السكريبت (Java أو C++) --</option>
+          <option value="java">Java</option>
+          <option value="cpp">C++</option>
+        </select>
+
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+          <button type="button" class="btn-warn" style="flex:1; font-size:12px;" onclick="loadPreset('move')">
+            كود حركة ناعمة + قفز
+          </button>
+          <button type="button" class="btn-accent" style="flex:1; font-size:12px;" onclick="loadPreset('patrol')">
+            كود دورية X/Z ناعمة
+          </button>
+        </div>
+
+        <textarea id="scriptCode" rows="8" placeholder="اختر اللغة أولاً (Java أو C++) ثم اكتب الكود أو حمّل الكود الجاهز..."></textarea>
+
+        <button type="button" class="btn-primary" style="width:100%;" onclick="applyScriptMandatory()">
+          اعتماد وتطبيق إجباري على الكائن
+        </button>
+        <div id="scriptMsg" style="font-size:12px; margin-top:8px; color:#79c0ff;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- صفحة 2: استوديو الموديلينج -->
+  <div id="modelingView" class="sub-workspace">
+    <div class="two-col-grid">
+      <div class="panel" style="max-height:84vh; overflow-y:auto;">
+        <h3>خصائص تشكيل الـ Shape (Blender Modeling)</h3>
+
+        <label style="font-size:12px;">اسم المجسم (Mesh Name)</label>
+        <input id="modelNameInput" type="text" value="مجسم_موديلينج_3D" />
+
+        <label style="font-size:12px;">الشكل الأساسي (Base Mesh)</label>
+        <select id="modelShapeType" onchange="drawModelPreview()">
+          <option value="box">مكعب / كتلة (Box Mesh)</option>
+          <option value="pyramid">هرم / قمة مدببة (Pyramid)</option>
+          <option value="pillar">عمود / برج (Pillar / Tower)</option>
+          <option value="wedge">منحدر / شكل مائل (Wedge / Ramp)</option>
+          <option value="crystal">كريستالة مزدوجة (Double Crystal)</option>
+          <option value="dome">قبة هندسية (Faceted Dome)</option>
+          <option value="stairs">درج / سلم (Stairs Steps)</option>
+          <option value="arch">قوس / إطار مجوف (Arch Frame)</option>
+        </select>
+
+        <label style="font-size:12px;">العرض Scale X: <strong id="modWVal">50</strong></label>
+        <input id="modWidth" type="range" min="20" max="150" value="50" oninput="syncModelVals()" />
+
+        <label style="font-size:12px;">الارتفاع Scale Y: <strong id="modHVal">60</strong></label>
+        <input id="modHeight" type="range" min="20" max="160" value="60" oninput="syncModelVals()" />
+
+        <label style="font-size:12px;">العمق Scale Z: <strong id="modDVal">50</strong></label>
+        <input id="modDepth" type="range" min="20" max="150" value="50" oninput="syncModelVals()" />
+
+        <label style="font-size:12px;">تضييق القمة (Taper): <strong id="modTaperVal">0.75</strong></label>
+        <input id="modTaper" type="range" min="0.05" max="1.5" step="0.05" value="0.75" oninput="syncModelVals()" />
+
+        <label style="font-size:12px;">عرض الشطف / Bevel: <strong id="modBevelVal">0.15</strong></label>
+        <input id="modBevel" type="range" min="0" max="0.45" step="0.05" value="0.15" oninput="syncModelVals()" />
+
+        <label style="font-size:12px;">التواء المجسم (Twist °): <strong id="modTwistVal">0</strong>°</label>
+        <input id="modTwist" type="range" min="-90" max="90" step="5" value="0" oninput="syncModelVals()" />
+
+        <label style="font-size:12px;">تموّج / انتفاخ (Bulge): <strong id="modBulgeVal">1.0</strong></label>
+        <input id="modBulge" type="range" min="0.5" max="1.6" step="0.05" value="1.0" oninput="syncModelVals()" />
+
+        <label style="font-size:12px;">انحراف القمة X (Shear X): <strong id="modShearXVal">0</strong></label>
+        <input id="modShearX" type="range" min="-50" max="50" step="2" value="0" oninput="syncModelVals()" />
+
+        <label style="font-size:12px;">انحراف القمة Z (Shear Z): <strong id="modShearZVal">0</strong></label>
+        <input id="modShearZ" type="range" min="-50" max="50" step="2" value="0" oninput="syncModelVals()" />
+
+        <label style="font-size:12px;">تقطيع الحلقات (Loop Cuts): <strong id="modSegVal">3</strong></label>
+        <input id="modSegments" type="range" min="1" max="8" step="1" value="3" oninput="syncModelVals()" />
+
+        <label style="font-size:12px;">دوران المجسم Y (Rotation Y): <strong id="modRotYVal">0</strong>°</label>
+        <input id="modRotY" type="range" min="0" max="360" step="5" value="0" oninput="syncModelVals()" />
+
+        <label style="font-size:12px;">لون المجسم</label>
+        <input id="modelColorInput" type="color" value="#a371f7" onchange="drawModelPreview()" style="height:36px; padding:2px;" />
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:10px; margin-bottom:6px;">
+          <button type="button" class="btn-warn" style="font-size:11px; padding:7px 4px;" onclick="applyQuickExtrude()">
+            + Extrude
+          </button>
+          <button type="button" class="btn-accent" style="font-size:11px; padding:7px 4px;" onclick="applyQuickBevel()">
+            + Bevel
+          </button>
+          <button type="button" class="btn-accent" style="font-size:11px; padding:7px 4px;" onclick="applyQuickSubdivide()">
+            + Subdivide
+          </button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px;">
+          <button type="button" class="btn-accent" style="font-size:11px; padding:7px 4px;" onclick="flipModelShearX()">
+            ↔ Mirror / Flip X
+          </button>
+          <button type="button" class="btn-danger" style="font-size:11px; padding:7px 4px;" onclick="resetModelParams()">
+            إعادة ضبط
+          </button>
+        </div>
+
+        <button type="button" class="btn-primary" style="width:100%;" onclick="sendModeledShapeToScene()">
+          إرسال المجسم 3D إلى المشهد (Scene)
+        </button>
+      </div>
+
+      <div class="panel" style="display:flex; flex-direction:column; align-items:center;">
+        <h3>معاينة الموديلينج ثلاثي الأبعاد (اسحب بالماوس لتدوير المجسم • Wireframe &amp; Faces)</h3>
+        <canvas id="modelPreviewCanvas" width="640" height="470"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- صفحة 3: استوديو الرسم Paint -->
+  <div id="paintView" class="sub-workspace">
+    <div class="two-col-grid">
+      <div class="panel">
+        <h3>أدوات رسم الشخصية (Paint)</h3>
+        <label style="font-size:12px;">اسم الشخصية المرسومة</label>
+        <input id="paintedCharName" type="text" value="بطل_مرسوم_3D" />
+
+        <label style="font-size:12px;">لون الفرشاة</label>
+        <input id="brushColor" type="color" value="#3fb950" style="height:38px; padding:2px;" />
+
+        <label style="font-size:12px;">حجم الفرشاة (<span id="brushSizeVal">12</span> px)</label>
+        <input id="brushSize" type="range" min="2" max="40" value="12" oninput="document.getElementById('brushSizeVal').innerText=this.value" />
+
+        <div style="display:flex; gap:8px; margin-top:8px; margin-bottom:10px;">
+          <button type="button" class="btn-accent" style="flex:1;" onclick="setPaintTool('brush')">فرشاة</button>
+          <button type="button" class="btn-warn" style="flex:1;" onclick="setPaintTool('eraser')">ممحاة</button>
+          <button type="button" class="btn-danger" style="flex:1;" onclick="clearPaintCanvas()">مسح</button>
+        </div>
+
+        <button type="button" class="btn-primary" style="width:100%; margin-bottom:8px;" onclick="sendPaintedCharacterTo3D(false)">
+          إرسال الشخصية إلى مشهد 3D
+        </button>
+        <button type="button" class="btn-warn" style="width:100%;" onclick="sendPaintedCharacterTo3D(true)">
+          إرسال للمشهد + عمل أنيميشن AI تلقائي
+        </button>
+      </div>
+
+      <div class="panel" style="display:flex; flex-direction:column; align-items:center;">
+        <h3>لوحة رسم الشخصية (ارسم شخصيتك هنا ثم أرسلها للمشهد 3D)</h3>
+        <canvas id="paintCanvas" width="640" height="470"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let authToken = "dev_bypass_token";
+    let objects = [];
+    let selectedId = null;
+    let timeElapsed = 0;
+    let isPlayMode = false;
+    let isMouseHidden = false;
+
+    // أنيميشنز الأكشن والانتقال (نار بتضرب، حركة سريعة، تيليبورت)
+    let projectiles = []; // قذائف النار
+    let fxBursts = [];    // ومضات التيليبورت والحركة السريعة
+    let autoFireLoop = false;
+    let autoFireTimer = 0;
+
+    let cinematicWaypoints = [];
+    let isCinematicPlaying = false;
+    let cineElapsed = 0;
+
+    let menuTitle = "مغامرة نيكسوس 3D";
+    let menuStartText = "ابدأ اللعبة";
+    let menuEnabled = true;
+
+    let groundHalfSize = 600;
+    let groundColor = "#1e293b";
+    let groundTexturePattern = null;
+    let skyboxType = "day";
+
+    const SKY_STARS = Array.from({ length: 75 }, (_, i) => ({
+      rx: ((i * 73) % 100) / 100,
+      ry: ((i * 41) % 60) / 100,
+      r: (i % 2) + 1
+    }));
+
+    // الكاميرا حرة وتخترق الأرض عادي
+    let camYaw = 0.55;
+    let camPitch = 0.48;
+    let camZoom = 1.55;
+    let camFollowEnabled = true;
+    let camFocusX = 0;
+    let camFocusY = 0;
+    let camFocusZ = 0;
+
+    let isOrbiting = false;
+    let pointerDownTime = 0;
+    let pointerStartX = 0;
+    let pointerStartY = 0;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+
+    let modYaw = 0.6;
+    let modPitch = 0.35;
+    let isModDragging = false;
+    let modLastX = 0;
+    let modLastY = 0;
+
+    const inputState = { left: false, right: false, forward: false, backward: false };
+    let tapImpulseTimer = 0;
+
+    let currentFrame = 0;
+    let isTimelinePlaying = false;
+    let timelineTimer = 0;
+
+    const PRESETS = {
+      java: {
+        move: `public class SmoothPlayerController {
+    public float moveSpeed = 180.0f;
+    public float jumpForce = 280.0f;
+    public float gravity = 650.0f;
+
+    public void onUpdate(float dt) {
+        applySmoothVelocity(moveSpeed, jumpForce, gravity);
+    }
+}`,
+        patrol: `public class SmoothOrbitPatrol {
+    public float moveSpeed = 160.0f;
+    public void onUpdate(float t) {
+        setAutoPatrolXZ(Math.sin(t) * 140, Math.cos(t) * 140);
+    }
+}`
+      },
+      cpp: {
+        move: `struct SmoothPlayerCpp {
+    float moveSpeed = 180.0f;
+    float jumpForce = 280.0f;
+    float gravity = 650.0f;
+
+    void onUpdate(float dt) {
+        integratePhysics3D(moveSpeed, jumpForce, gravity, dt);
+    }
+};`,
+        patrol: `struct SmoothPatrolCpp {
+    float moveSpeed = 160.0f;
+    void onUpdate(float t) {
+        setAutoPatrolXZ(sin(t) * 140.0f, cos(t) * 140.0f);
+    }
+};`
+      }
+    };
+
+    // مجسمات Low-Poly جاهزة
+    function spawnLowPolyPreset(kind) {
+      const randOffset = () => (Math.random() - 0.5) * 140;
+      if (kind === "tree") {
+        addObject("modeled", `شجرة_LowPoly_${objects.length + 1}`, null, {
+          width: 44, height: 76, depth: 44,
+          shapeType: "pyramid", taper: 0.1, bevel: 0.1, twist: 0, bulge: 1.15,
+          shearX: 0, shearZ: 0, segments: 3, rotY: 18, color: "#2ea043"
+        });
+      } else if (kind === "rock") {
+        addObject("modeled", `صخرة_LowPoly_${objects.length + 1}`, null, {
+          width: 48, height: 32, depth: 42,
+          shapeType: "dome", taper: 0.4, bevel: 0.25, twist: 15, bulge: 1.25,
+          shearX: 6, shearZ: -4, segments: 2, rotY: 35, color: "#6e7681"
+        });
+      } else if (kind === "pillar") {
+        addObject("modeled", `عمود_LowPoly_${objects.length + 1}`, null, {
+          width: 30, height: 95, depth: 30,
+          shapeType: "pillar", taper: 0.78, bevel: 0.12, twist: 0, bulge: 1.0,
+          shearX: 0, shearZ: 0, segments: 4, rotY: 0, color: "#8b949e"
+        });
+      } else if (kind === "crystal") {
+        addObject("modeled", `كريستال_LowPoly_${objects.length + 1}`, null, {
+          width: 34, height: 68, depth: 34,
+          shapeType: "crystal", taper: 0.05, bevel: 0.05, twist: 20, bulge: 1.1,
+          shearX: 0, shearZ: 0, segments: 2, rotY: 25, color: "#58a6ff"
+        });
+      }
+      const created = getSelected();
+      if (created) {
+        created.x = randOffset();
+        created.z = randOffset();
+        created.y = 0;
+        syncAxisInputs(created);
+        renderInspector();
+      }
+    }
+
+    // أنيميشن نار بتضرب
+    function triggerFireAttack() {
+      const obj = getSelected();
+      if (!obj) return;
+      const dirX = Math.abs(obj.vx) > 2 ? Math.sign(obj.vx) : Math.sin(camYaw);
+      const dirZ = Math.abs(obj.vz) > 2 ? Math.sign(obj.vz) : Math.cos(camYaw);
+      const len = Math.hypot(dirX, dirZ) || 1;
+      const nx = dirX / len;
+      const nz = dirZ / len;
+
+      projectiles.push({
+        x: obj.x + nx * 24,
+        y: obj.y + obj.height * 0.55,
+        z: obj.z + nz * 24,
+        vx: nx * 460,
+        vz: nz * 460,
+        life: 0.9,
+        maxLife: 0.9,
+        radius: 14
+      });
+    }
+
+    function toggleAutoFireLoop() {
+      autoFireLoop = document.getElementById("autoFireLoopCheck").checked;
+      autoFireTimer = 0;
+    }
+
+    // أنيميشن حركة سريعة (Dash)
+    function triggerFastDash() {
+      const obj = getSelected();
+      if (!obj) return;
+      const dirX = Math.abs(obj.vx) > 2 ? Math.sign(obj.vx) : Math.sin(camYaw);
+      const dirZ = Math.abs(obj.vz) > 2 ? Math.sign(obj.vz) : Math.cos(camYaw);
+      const len = Math.hypot(dirX, dirZ) || 1;
+      const nx = dirX / len;
+      const nz = dirZ / len;
+
+      fxBursts.push({ x: obj.x, y: obj.y + obj.height * 0.5, z: obj.z, color: "#f2cc60", life: 0.45, maxLife: 0.45 });
+      obj.vx = nx * 820;
+      obj.vz = nz * 820;
+      obj.x = Math.max(-groundHalfSize + 20, Math.min(groundHalfSize - 20, obj.x + nx * 70));
+      obj.z = Math.max(-groundHalfSize + 20, Math.min(groundHalfSize - 20, obj.z + nz * 70));
+      fxBursts.push({ x: obj.x, y: obj.y + obj.height * 0.5, z: obj.z, color: "#79c0ff", life: 0.45, maxLife: 0.45 });
+      syncAxisInputs(obj);
+      renderInspector();
+    }
+
+    // أنيميشن تيليبورت (انتقال)
+    function triggerTeleport() {
+      const obj = getSelected();
+      if (!obj) return;
+      fxBursts.push({ x: obj.x, y: obj.y + obj.height * 0.5, z: obj.z, color: "#a371f7", life: 0.55, maxLife: 0.55 });
+
+      const dirX = Math.abs(obj.vx) > 2 ? Math.sign(obj.vx) : Math.sin(camYaw);
+      const dirZ = Math.abs(obj.vz) > 2 ? Math.sign(obj.vz) : Math.cos(camYaw);
+      const len = Math.hypot(dirX, dirZ) || 1;
+      const dist = 125;
+
+      obj.x = Math.max(-groundHalfSize + 20, Math.min(groundHalfSize - 20, obj.x + (dirX / len) * dist));
+      obj.z = Math.max(-groundHalfSize + 20, Math.min(groundHalfSize - 20, obj.z + (dirZ / len) * dist));
+      obj.vx = 0;
+      obj.vz = 0;
+
+      fxBursts.push({ x: obj.x, y: obj.y + obj.height * 0.5, z: obj.z, color: "#3fb950", life: 0.55, maxLife: 0.55 });
+      syncAxisInputs(obj);
+      renderInspector();
+    }
+
+    function updateActionEffects(dt) {
+      if (autoFireLoop && getSelected()) {
+        autoFireTimer += dt;
+        if (autoFireTimer >= 0.45) {
+          autoFireTimer = 0;
+          triggerFireAttack();
+        }
+      }
+
+      projectiles.forEach(p => {
+        p.x += p.vx * dt;
+        p.z += p.vz * dt;
+        p.life -= dt;
+      });
+      projectiles = projectiles.filter(p => p.life > 0);
+
+      fxBursts.forEach(f => {
+        f.life -= dt;
+      });
+      fxBursts = fxBursts.filter(f => f.life > 0);
+    }
+
+    function drawActionEffects(ctx, cx, cy) {
+      projectiles.forEach(p => {
+        const pos = project3D(p.x, p.y, p.z, cx, cy);
+        const r = Math.max(4, p.radius * pos.scale * (0.6 + (p.life / p.maxLife) * 0.6));
+        const grad = ctx.createRadialGradient(pos.sx, pos.sy, 1, pos.sx, pos.sy, r * 1.4);
+        grad.addColorStop(0, "#fff3b0");
+        grad.addColorStop(0.45, "#ff7b00");
+        grad.addColorStop(1, "rgba(217, 4, 41, 0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(pos.sx, pos.sy, r * 1.4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      fxBursts.forEach(f => {
+        const pos = project3D(f.x, f.y, f.z, cx, cy);
+        const ratio = 1 - f.life / f.maxLife;
+        const rad = Math.max(6, (12 + ratio * 28) * pos.scale);
+        ctx.strokeStyle = f.color;
+        ctx.globalAlpha = Math.max(0, 1 - ratio);
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(pos.sx, pos.sy, rad, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      });
+    }
+
+    function syncCameraSliders() {
+      const yawDeg = Math.round(((camYaw * 180) / Math.PI) % 360);
+      const pitchDeg = Math.round((camPitch * 180) / Math.PI);
+      document.getElementById("camYawSlider").value = Math.max(-180, Math.min(180, yawDeg));
+      document.getElementById("camPitchSlider").value = Math.max(-90, Math.min(90, pitchDeg));
+      document.getElementById("camZoomSlider").value = camZoom.toFixed(2);
+      document.getElementById("camYawDeg").innerText = yawDeg;
+      document.getElementById("camPitchDeg").innerText = pitchDeg;
+      document.getElementById("camZoomVal").innerText = camZoom.toFixed(2);
+    }
+
+    function setCameraFromSliders() {
+      isCinematicPlaying = false;
+      const yawDeg = parseFloat(document.getElementById("camYawSlider").value) || 0;
+      const pitchDeg = parseFloat(document.getElementById("camPitchSlider").value) || 0;
+      const zVal = parseFloat(document.getElementById("camZoomSlider").value) || 1.55;
+
+      camYaw = (yawDeg * Math.PI) / 180;
+      camPitch = (pitchDeg * Math.PI) / 180;
+      camZoom = Math.max(0.5, Math.min(2.6, zVal));
+
+      document.getElementById("camYawDeg").innerText = Math.round(yawDeg);
+      document.getElementById("camPitchDeg").innerText = Math.round(pitchDeg);
+      document.getElementById("camZoomVal").innerText = camZoom.toFixed(2);
+    }
+
+    function renderCinematicWaypoints() {
+      const box = document.getElementById("cineWaypointList");
+      if (cinematicWaypoints.length === 0) {
+        box.innerHTML = `<span style="font-size:11px; color:#8b949e;">لا توجد نقاط Cutscene بعد — غيّر زاوية الكاميرا واضغط "+ حفظ زاوية الكاميرا الحالية كنقطة" أو أضف نقطة يدوياً.</span>`;
+        return;
+      }
+      box.innerHTML = cinematicWaypoints
+        .map((wp, idx) => `
+          <span class="cine-chip">
+            #${idx + 1} | Yaw:${Math.round(wp.yawDeg)}° | Pitch:${Math.round(wp.pitchDeg)}° | Zoom:${wp.zoom.toFixed(1)} | ${wp.duration}s
+            <button type="button" onclick="removeCinematicWaypoint(${idx})">×</button>
+          </span>
+        `)
+        .join("");
+    }
+
+    function removeCinematicWaypoint(index) {
+      cinematicWaypoints.splice(index, 1);
+      renderCinematicWaypoints();
+    }
+
+    function clearCinematicWaypoints() {
+      cinematicWaypoints = [];
+      isCinematicPlaying = false;
+      renderCinematicWaypoints();
+    }
+
+    function addCurrentCameraAsWaypoint() {
+      const yawDeg = Math.round((camYaw * 180) / Math.PI);
+      const pitchDeg = Math.round((camPitch * 180) / Math.PI);
+      const dur = parseFloat(document.getElementById("wpDurInput").value) || 2.0;
+      cinematicWaypoints.push({
+        yawDeg,
+        pitchDeg,
+        zoom: camZoom,
+        duration: Math.max(0.4, dur)
+      });
+      renderCinematicWaypoints();
+    }
+
+    function addCustomWaypointFromInputs() {
+      const yawDeg = parseFloat(document.getElementById("wpYawInput").value) || 0;
+      const pitchDeg = parseFloat(document.getElementById("wpPitchInput").value) || 0;
+      const zoom = Math.max(0.5, Math.min(2.6, parseFloat(document.getElementById("wpZoomInput").value) || 1.6));
+      const duration = Math.max(0.4, parseFloat(document.getElementById("wpDurInput").value) || 2.0);
+      cinematicWaypoints.push({ yawDeg, pitchDeg, zoom, duration });
+      renderCinematicWaypoints();
+    }
+
+    function playCustomCinematic() {
+      if (cinematicWaypoints.length === 0) {
+        alert("أضف نقطة واحدة على الأقل في مصمم Cinematic Camera أولاً.");
+        return;
+      }
+      isCinematicPlaying = true;
+      cineElapsed = 0;
+      document.getElementById("cineRunBtn").innerText = "⏹ إيقاف Cutscene";
+    }
+
+    function toggleCustomCinematic() {
+      if (isCinematicPlaying) {
+        isCinematicPlaying = false;
+        document.getElementById("cineRunBtn").innerText = "▶ تشغيل Cutscene اللي صممته";
+      } else {
+        playCustomCinematic();
+      }
+    }
+
+    function updateCustomCinematic(dt) {
+      if (!isCinematicPlaying || cinematicWaypoints.length === 0) return;
+
+      if (cinematicWaypoints.length === 1) {
+        const w = cinematicWaypoints[0];
+        camYaw = (w.yawDeg * Math.PI) / 180;
+        camPitch = (w.pitchDeg * Math.PI) / 180;
+        camZoom = w.zoom;
+        syncCameraSliders();
+        return;
+      }
+
+      cineElapsed += dt;
+      const totalDur = cinematicWaypoints.reduce((acc, w) => acc + w.duration, 0);
+      const loopT = cineElapsed % totalDur;
+
+      let accum = 0;
+      for (let i = 0; i < cinematicWaypoints.length; i++) {
+        const a = cinematicWaypoints[i];
+        const b = cinematicWaypoints[(i + 1) % cinematicWaypoints.length];
+        if (loopT >= accum && loopT <= accum + a.duration) {
+          const rawT = (loopT - accum) / a.duration;
+          const easeT = rawT * rawT * (3 - 2 * rawT);
+
+          const yawA = (a.yawDeg * Math.PI) / 180;
+          const yawB = (b.yawDeg * Math.PI) / 180;
+          const pitchA = (a.pitchDeg * Math.PI) / 180;
+          const pitchB = (b.pitchDeg * Math.PI) / 180;
+
+          camYaw = yawA + (yawB - yawA) * easeT;
+          camPitch = pitchA + (pitchB - pitchA) * easeT;
+          camZoom = a.zoom + (b.zoom - a.zoom) * easeT;
+          syncCameraSliders();
+          break;
+        }
+        accum += a.duration;
+      }
+    }
+
+    function syncMenuSettings() {
+      menuTitle = document.getElementById("menuTitleInput").value.trim() || "مغامرة نيكسوس 3D";
+      menuStartText = document.getElementById("menuStartTextInput").value.trim() || "ابدأ اللعبة";
+      menuEnabled = document.getElementById("enableMainMenuCheck").checked;
+      document.getElementById("menuDisplayTitle").innerText = menuTitle;
+      document.getElementById("menuDisplayStartBtn").innerText = menuStartText;
+    }
+
+    function openMainMenu() {
+      setMouseHidden(false);
+      document.getElementById("inGameMenu").classList.add("active");
+    }
+
+    function closeMainMenuAndPlay() {
+      document.getElementById("inGameMenu").classList.remove("active");
+      setMouseHidden(true);
+    }
+
+    function setMouseHidden(hidden) {
+      isMouseHidden = hidden;
+      const wrapper = document.getElementById("viewportWrapper");
+      if (hidden) {
+        wrapper.classList.add("hide-cursor");
+      } else {
+        wrapper.classList.remove("hide-cursor");
+      }
+    }
+
+    function toggleMouseVisibility() {
+      setMouseHidden(!isMouseHidden);
+    }
+
+    function switchTab(tab) {
+      document.getElementById("sceneView").style.display = tab === "scene" ? "grid" : "none";
+      document.getElementById("modelingView").style.display = tab === "modeling" ? "block" : "none";
+      document.getElementById("paintView").style.display = tab === "paint" ? "block" : "none";
+
+      document.getElementById("tabSceneBtn").classList.toggle("active", tab === "scene");
+      document.getElementById("tabModelBtn").classList.toggle("active", tab === "modeling");
+      document.getElementById("tabPaintBtn").classList.toggle("active", tab === "paint");
+
+      if (tab === "modeling") {
+        drawModelPreview();
+      }
+    }
+
+    function toggleCameraFollow() {
+      camFollowEnabled = document.getElementById("toggleCameraFollow").checked;
+      if (!camFollowEnabled) {
+        camFocusX = 0;
+        camFocusY = 0;
+        camFocusZ = 0;
+      }
+    }
+
+    function startPlayMode() {
+      switchTab("scene");
+      isPlayMode = true;
+      camZoom = 1.55;
+      syncCameraSliders();
+      camFollowEnabled = true;
+      document.getElementById("toggleCameraFollow").checked = true;
+
+      const wrapper = document.getElementById("viewportWrapper");
+      const canvas = document.getElementById("view3d");
+      wrapper.classList.add("play-fullscreen");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      document.getElementById("mobileControlsOverlay").style.display = "flex";
+
+      if (wrapper.requestFullscreen) {
+        wrapper.requestFullscreen().catch(() => {});
+      }
+
+      if (menuEnabled) {
+        openMainMenu();
+      } else {
+        closeMainMenuAndPlay();
+      }
+    }
+
+    function stopPlayMode() {
+      isPlayMode = false;
+      isCinematicPlaying = false;
+      document.getElementById("cineRunBtn").innerText = "▶ تشغيل Cutscene اللي صممته";
+
+      setMouseHidden(false);
+      document.getElementById("inGameMenu").classList.remove("active");
+
+      const wrapper = document.getElementById("viewportWrapper");
+      const canvas = document.getElementById("view3d");
+      wrapper.classList.remove("play-fullscreen");
+      canvas.width = 760;
+      canvas.height = 420;
+      toggleMobileControlsUI();
+
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    document.addEventListener("fullscreenchange", () => {
+      if (!document.fullscreenElement && isPlayMode) {
+        stopPlayMode();
+      }
+    });
+
+    function toggleMobileControlsUI() {
+      const show = document.getElementById("toggleMobileHud").checked || isPlayMode;
+      document.getElementById("mobileControlsOverlay").style.display = show ? "flex" : "none";
+    }
+
+    function buildGameDownload() {
+      const exportObjects = objects.map(o => ({
+        name: o.name,
+        type: o.type,
+        x: o.x,
+        y: o.y,
+        z: o.z,
+        width: o.width,
+        height: o.height,
+        depth: o.depth,
+        shapeType: o.shapeType || "box",
+        taper: o.taper ?? 1.0,
+        bevel: o.bevel ?? 0.15,
+        twist: o.twist ?? 0,
+        bulge: o.bulge ?? 1.0,
+        shearX: o.shearX || 0,
+        shearZ: o.shearZ || 0,
+        rotY: o.rotY || 0,
+        useGravity: o.useGravity,
+        useCollision: o.useCollision,
+        color: o.material.color,
+        spriteDataUrl: o.spriteImage ? o.spriteImage.src : null,
+        behavior: o.behavior || { moveSpeed: 180, jumpForce: 280, gravity: 650, isAutoPatrol: false },
+        keyframes: o.keyframes || []
+      }));
+
+      const gameConfig = {
+        menuTitle,
+        menuStartText,
+        menuEnabled,
+        groundHalfSize,
+        groundColor,
+        skyboxType,
+        cinematicWaypoints,
+        objects: exportObjects
+      };
+
+      const builtHtml = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>${menuTitle}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+  body { background: #000; overflow: hidden; }
+  body.no-cursor, body.no-cursor * { cursor: none !important; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  .hud { position: fixed; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; color: #fff; font-size: 13px; pointer-events: none; z-index: 10; flex-wrap: wrap; gap: 6px; }
+  .badge { background: rgba(0,0,0,0.72); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); pointer-events: auto; color: #fff; cursor: pointer; }
+  .menu-overlay { position: fixed; inset: 0; background: rgba(9,12,16,0.88); display: flex; align-items: center; justify-content: center; z-index: 30; }
+  .menu-box { background: #161b22; border: 1px solid #30363d; border-radius: 14px; padding: 28px 34px; text-align: center; display: flex; flex-direction: column; gap: 14px; min-width: 280px; }
+  .menu-box button { padding: 10px 18px; border-radius: 8px; border: none; font-size: 15px; font-weight: bold; cursor: pointer; }
+  .play-btn { background: #238636; color: #fff; }
+  .cine-btn { background: #1f6feb; color: #fff; }
+  .mob-controls { position: fixed; bottom: 16px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: flex-end; pointer-events: none; z-index: 10; }
+  .pad { display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(2, 52px); gap: 8px; pointer-events: auto; }
+  .btn { background: rgba(31,111,235,0.65); border: 1px solid #79c0ff; color: #fff; border-radius: 12px; font-size: 18px; font-weight: bold; }
+  .jump { pointer-events: auto; width: 76px; height: 76px; border-radius: 50%; background: rgba(210,153,34,0.8); border: 2px solid #f2cc60; color: #fff; font-weight: bold; }
+</style>
+</head>
+<body>
+<div id="mainMenu" class="menu-overlay">
+  <div class="menu-box">
+    <h1 style="color:#79c0ff; font-size:24px;">${menuTitle}</h1>
+    <button class="play-btn" onclick="startPlay()">${menuStartText}</button>
+    <button class="cine-btn" onclick="startCine(); startPlay();">🎬 تشغيل Cutscene بتصميمك</button>
+  </div>
+</div>
+<div class="hud">
+  <span class="badge">🎮 ${menuTitle} • كليك يمين/ESC للماوس</span>
+  <div style="display:flex; gap:6px; flex-wrap:wrap;">
+    <button class="badge" onclick="fireShot()">🔥 نار</button>
+    <button class="badge" onclick="dashShot()">⚡ حركة سريعة</button>
+    <button class="badge" onclick="tpShot()">🌀 تيليبورت</button>
+    <button class="badge" onclick="toggleCine()">🎬 Cutscene</button>
+    <span class="badge" id="posHud">X:0 Y:0 Z:0</span>
+  </div>
+</div>
+<canvas id="gameCanvas"></canvas>
+<div class="mob-controls">
+  <div class="pad">
+    <div></div>
+    <button class="btn" onpointerdown="inp.forward=true" onpointerup="inp.forward=false" onpointerleave="inp.forward=false">▲</button>
+    <div></div>
+    <button class="btn" onpointerdown="inp.left=true" onpointerup="inp.left=false" onpointerleave="inp.left=false">◀</button>
+    <button class="btn" onpointerdown="inp.backward=true" onpointerup="inp.backward=false" onpointerleave="inp.backward=false">▼</button>
+    <button class="btn" onpointerdown="inp.right=true" onpointerup="inp.right=false" onpointerleave="inp.right=false">▶</button>
+  </div>
+  <button class="jump" onpointerdown="jump()">JUMP</button>
+</div>
+<script>
+const GAME = ${JSON.stringify(gameConfig)};
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener("resize", resize); resize();
+
+const inp = { left:false, right:false, forward:false, backward:false };
+let cineMode = false, cineT = 0, shots = [];
+let camYaw = 0.55, camPitch = 0.48, camZoom = 1.55, fx = 0, fy = 0, fz = 0;
+let dragging = false, lx = 0, ly = 0;
+
+if (!GAME.menuEnabled) { document.getElementById("mainMenu").style.display = "none"; document.body.classList.add("no-cursor"); }
+function startPlay(){ document.getElementById("mainMenu").style.display = "none"; document.body.classList.add("no-cursor"); }
+function startCine(){ if (GAME.cinematicWaypoints && GAME.cinematicWaypoints.length > 0) { cineMode = true; cineT = 0; } }
+function toggleCine(){ if (cineMode) cineMode = false; else startCine(); }
+
+GAME.objects.forEach(o => {
+  o.vx = 0; o.vy = 0; o.vz = 0; o.onGround = true;
+  if (o.spriteDataUrl) { const im = new Image(); im.src = o.spriteDataUrl; o.img = im; }
+});
+const player = GAME.objects.find(o => o.type === "character") || GAME.objects[0];
+if (player) { fx = player.x; fy = player.y; fz = player.z; }
+
+function jump(){
+  if(player && player.onGround){ player.vy = (player.behavior && player.behavior.jumpForce) || 280; player.onGround = false; }
+}
+function fireShot(){
+  if(!player) return;
+  const dx = Math.sin(camYaw), dz = Math.cos(camYaw);
+  shots.push({ x: player.x + dx*20, y: player.y + player.height*0.5, z: player.z + dz*20, vx: dx*460, vz: dz*460, life: 0.9 });
+}
+function dashShot(){
+  if(!player) return;
+  player.x = Math.max(-GAME.groundHalfSize+20, Math.min(GAME.groundHalfSize-20, player.x + Math.sin(camYaw)*75));
+  player.z = Math.max(-GAME.groundHalfSize+20, Math.min(GAME.groundHalfSize-20, player.z + Math.cos(camYaw)*75));
+}
+function tpShot(){
+  if(!player) return;
+  player.x = Math.max(-GAME.groundHalfSize+20, Math.min(GAME.groundHalfSize-20, player.x + Math.sin(camYaw)*125));
+  player.z = Math.max(-GAME.groundHalfSize+20, Math.min(GAME.groundHalfSize-20, player.z + Math.cos(camYaw)*125));
+}
+
+canvas.addEventListener("pointerdown", e => { dragging = true; lx = e.clientX; ly = e.clientY; });
+window.addEventListener("pointerup", () => { dragging = false; });
+window.addEventListener("pointermove", e => {
+  if(!dragging) return;
+  cineMode = false;
+  camYaw += (e.clientX - lx) * 0.008;
+  camPitch += (e.clientY - ly) * 0.008;
+  lx = e.clientX; ly = e.clientY;
+});
+window.addEventListener("contextmenu", e => { e.preventDefault(); document.body.classList.toggle("no-cursor"); });
+window.addEventListener("keydown", e => {
+  if (e.code === "Escape") document.body.classList.remove("no-cursor");
+  if(e.code==="KeyD"||e.code==="ArrowRight") inp.right=true;
+  if(e.code==="KeyA"||e.code==="ArrowLeft") inp.left=true;
+  if(e.code==="KeyW"||e.code==="ArrowUp") inp.forward=true;
+  if(e.code==="KeyS"||e.code==="ArrowDown") inp.backward=true;
+  if(e.code==="Space"){ e.preventDefault(); jump(); }
+  if(e.code==="KeyF") fireShot();
+  if(e.code==="ShiftLeft") dashShot();
+  if(e.code==="KeyT") tpShot();
+});
+window.addEventListener("keyup", e => {
+  if(e.code==="KeyD"||e.code==="ArrowRight") inp.right=false;
+  if(e.code==="KeyA"||e.code==="ArrowLeft") inp.left=false;
+  if(e.code==="KeyW"||e.code==="ArrowUp") inp.forward=false;
+  if(e.code==="KeyS"||e.code==="ArrowDown") inp.backward=false;
+});
+
+function proj(x,y,z,cx,cy){
+  const dx = x - fx, dy = y - fy, dz = z - fz;
+  const rx = dx*Math.cos(camYaw) - dz*Math.sin(camYaw);
+  const rz = dx*Math.sin(camYaw) + dz*Math.cos(camYaw);
+  const ry = dy*Math.cos(camPitch) - rz*Math.sin(camPitch);
+  const fz2 = dy*Math.sin(camPitch) + rz*Math.cos(camPitch);
+  const fov = 560 * camZoom, d = fov + fz2, s = d > 60 ? fov/d : 0.1;
+  return { sx: cx + rx*s, sy: cy - ry*s, s, depth: fz2 };
+}
+
+let last = performance.now();
+function loop(now){
+  const dt = Math.min(0.05, (now - last)/1000); last = now;
+  if (cineMode && GAME.cinematicWaypoints.length > 0) {
+    cineT += dt;
+    const wps = GAME.cinematicWaypoints;
+    if (wps.length === 1) {
+      camYaw = wps[0].yawDeg*Math.PI/180; camPitch = wps[0].pitchDeg*Math.PI/180; camZoom = wps[0].zoom;
+    } else {
+      const tot = wps.reduce((s,w)=>s+w.duration,0);
+      const t = cineT % tot; let acc = 0;
+      for (let i=0;i<wps.length;i++){
+        const a = wps[i], b = wps[(i+1)%wps.length];
+        if (t>=acc && t<=acc+a.duration){
+          const k = (t-acc)/a.duration; const e = k*k*(3-2*k);
+          camYaw = (a.yawDeg + (b.yawDeg-a.yawDeg)*e)*Math.PI/180;
+          camPitch = (a.pitchDeg + (b.pitchDeg-a.pitchDeg)*e)*Math.PI/180;
+          camZoom = a.zoom + (b.zoom-a.zoom)*e; break;
+        }
+        acc += a.duration;
+      }
+    }
+  }
+
+  shots.forEach(s=>{ s.x += s.vx*dt; s.z += s.vz*dt; s.life -= dt; });
+  shots = shots.filter(s=>s.life>0);
+
+  const rightX = Math.cos(camYaw), rightZ = -Math.sin(camYaw);
+  const fwdX = Math.sin(camYaw), fwdZ = Math.cos(camYaw);
+
+  GAME.objects.forEach(o => {
+    const b = o.behavior || { moveSpeed:180, jumpForce:280, gravity:650 };
+    if (o === player) {
+      const hAxis = (inp.right ? 1 : 0) - (inp.left ? 1 : 0);
+      const vAxis = (inp.forward ? 1 : 0) - (inp.backward ? 1 : 0);
+      const tvx = (hAxis * rightX + vAxis * fwdX) * b.moveSpeed;
+      const tvz = (hAxis * rightZ + vAxis * fwdZ) * b.moveSpeed;
+      o.vx += (tvx - o.vx) * Math.min(1, dt*14);
+      o.vz += (tvz - o.vz) * Math.min(1, dt*14);
+    }
+    if (o.useGravity) o.vy -= b.gravity * dt;
+    const px = o.x, py = o.y, pz = o.z;
+    o.x += o.vx * dt; o.z += o.vz * dt; o.y += o.vy * dt;
+    const lim = GAME.groundHalfSize - o.width*0.5;
+    o.x = Math.max(-lim, Math.min(lim, o.x));
+    o.z = Math.max(-lim, Math.min(lim, o.z));
+    if (o.y <= 0) { o.y = 0; o.vy = 0; o.onGround = true; } else { o.onGround = false; }
+    if (o.useCollision) {
+      GAME.objects.forEach(ot => {
+        if (ot === o || !ot.useCollision) return;
+        if (Math.abs(o.x-ot.x)<(o.width+ot.width)*0.5 && Math.abs(o.z-ot.z)<(o.depth+ot.depth)*0.5 && o.y < ot.y+ot.height && o.y+o.height > ot.y) {
+          if (py >= ot.y+ot.height-4 && o.vy <= 0) { o.y = ot.y+ot.height; o.vy = 0; o.onGround = true; }
+          else { o.x = px; o.z = pz; o.vx = 0; o.vz = 0; }
+        }
+      });
+    }
+  });
+
+  if (player) {
+    fx += (player.x - fx) * Math.min(1, dt * 8);
+    fy += (player.y * 0.45 - fy) * Math.min(1, dt * 8);
+    fz += (player.z - fz) * Math.min(1, dt * 8);
+    document.getElementById("posHud").innerText = "X:" + Math.round(player.x) + " Y:" + Math.round(player.y) + " Z:" + Math.round(player.z);
+  }
+
+  ctx.fillStyle = GAME.skyboxType === "night" ? "#060b19" : GAME.skyboxType === "sunset" ? "#3b1c32" : "#2563eb";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  const cx = canvas.width/2, cy = canvas.height/2 + 60, g = GAME.groundHalfSize;
+  const gc = [proj(-g,0,-g,cx,cy), proj(g,0,-g,cx,cy), proj(g,0,g,cx,cy), proj(-g,0,g,cx,cy)];
+  ctx.beginPath(); ctx.moveTo(gc[0].sx,gc[0].sy); gc.slice(1).forEach(p=>ctx.lineTo(p.sx,p.sy)); ctx.closePath();
+  ctx.fillStyle = GAME.groundColor; ctx.fill(); ctx.strokeStyle = "#94a3b8"; ctx.lineWidth = 2; ctx.stroke();
+
+  const sorted = [...GAME.objects].sort((a,b)=>proj(b.x,b.y,b.z,cx,cy).depth - proj(a.x,a.y,a.z,cx,cy).depth);
+  sorted.forEach(o => {
+    const hw = o.width*0.5, hd = o.depth*0.5, y0 = o.y, y1 = o.y+o.height;
+    const thw = hw*(o.taper||1), thd = hd*(o.taper||1);
+    const pts = [
+      proj(o.x-hw,y0,o.z-hd,cx,cy), proj(o.x+hw,y0,o.z-hd,cx,cy), proj(o.x+hw,y0,o.z+hd,cx,cy), proj(o.x-hw,y0,o.z+hd,cx,cy),
+      proj(o.x-thw,y1,o.z-thd,cx,cy), proj(o.x+thw,y1,o.z-thd,cx,cy), proj(o.x+thw,y1,o.z+thd,cx,cy), proj(o.x-thw,y1,o.z+thd,cx,cy)
+    ];
+    [[0,1,5,4],[1,2,6,5],[2,3,7,6],[3,0,4,7],[4,5,6,7]].forEach(f=>{
+      ctx.beginPath(); ctx.moveTo(pts[f[0]].sx,pts[f[0]].sy); f.slice(1).forEach(i=>ctx.lineTo(pts[i].sx,pts[i].sy)); ctx.closePath();
+      ctx.fillStyle = o.color; ctx.fill(); ctx.strokeStyle = "#111"; ctx.stroke();
+    });
+  });
+
+  shots.forEach(s=>{
+    const p = proj(s.x,s.y,s.z,cx,cy);
+    ctx.fillStyle = "#ff7b00"; ctx.beginPath(); ctx.arc(p.sx,p.sy,14*p.scale,0,Math.PI*2); ctx.fill();
+  });
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+<\/script>
+</body>
+</html>`;
+
+      const blob = new Blob([builtHtml], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Nexus3D_Built_Game.html";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function updateEnvironment() {
+      groundHalfSize = parseInt(document.getElementById("groundSizeSlider").value, 10);
+      document.getElementById("groundSizeVal").innerText = groundHalfSize;
+      groundColor = document.getElementById("groundColorInput").value;
+      skyboxType = document.getElementById("skyboxSelect").value;
+    }
+
+    function resetCamera() {
+      isCinematicPlaying = false;
+      document.getElementById("cineRunBtn").innerText = "▶ تشغيل Cutscene اللي صممته";
+      camYaw = 0.55;
+      camPitch = 0.48;
+      camZoom = 1.55;
+      syncCameraSliders();
+      const obj = getSelected();
+      if (obj && camFollowEnabled) {
+        camFocusX = obj.x;
+        camFocusY = obj.y;
+        camFocusZ = obj.z;
+      } else {
+        camFocusX = 0;
+        camFocusY = 0;
+        camFocusZ = 0;
+      }
+    }
+
+    function createProceduralPattern(preset, baseColor) {
+      if (preset === "none") return null;
+      const off = document.createElement("canvas");
+      off.width = 64;
+      off.height = 64;
+      const octx = off.getContext("2d");
+
+      octx.fillStyle = baseColor;
+      octx.fillRect(0, 0, 64, 64);
+
+      if (preset === "checker") {
+        octx.fillStyle = "rgba(255,255,255,0.22)";
+        octx.fillRect(0, 0, 32, 32);
+        octx.fillRect(32, 32, 32, 32);
+        octx.fillStyle = "rgba(0,0,0,0.22)";
+        octx.fillRect(32, 0, 32, 32);
+        octx.fillRect(0, 32, 32, 32);
+      } else if (preset === "bricks") {
+        octx.strokeStyle = "rgba(0,0,0,0.45)";
+        octx.lineWidth = 3;
+        octx.strokeRect(0, 0, 64, 32);
+        octx.strokeRect(-32, 32, 64, 32);
+        octx.strokeRect(32, 32, 64, 32);
+      } else if (preset === "metal") {
+        octx.strokeStyle = "rgba(255,255,255,0.2)";
+        for (let y = 0; y < 64; y += 6) {
+          octx.beginPath();
+          octx.moveTo(0, y);
+          octx.lineTo(64, y);
+          octx.stroke();
+        }
+      } else if (preset === "grass") {
+        octx.fillStyle = "#2ea043";
+        octx.fillRect(0, 0, 64, 64);
+        octx.fillStyle = "#1a7f37";
+        for (let i = 0; i < 40; i++) {
+          octx.fillRect((i * 19) % 60, (i * 29) % 60, 4, 8);
+        }
+      }
+
+      const mainCtx = document.getElementById("view3d").getContext("2d");
+      return mainCtx.createPattern(off, "repeat");
+    }
+
+    function applyProceduralTexture() {
+      const obj = getSelected();
+      if (!obj) return;
+      const preset = document.getElementById("texturePreset").value;
+      obj.material.texturePreset = preset;
+      obj.material.texturePattern = createProceduralPattern(preset, obj.material.color);
+      obj.material.textureImage = null;
+      renderInspector();
+    }
+
+    function uploadTextureFile(event) {
+      const file = event.target.files && event.target.files[0];
+      const obj = getSelected();
+      if (!file || !obj) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const mainCtx = document.getElementById("view3d").getContext("2d");
+          obj.material.textureImage = img;
+          obj.material.texturePattern = mainCtx.createPattern(img, "repeat");
+          obj.material.texturePreset = "custom_image";
+          renderInspector();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function applyCurrentTextureToGround() {
+      const obj = getSelected();
+      if (obj && obj.material.texturePattern) {
+        groundTexturePattern = obj.material.texturePattern;
+      } else {
+        const preset = document.getElementById("texturePreset").value;
+        groundTexturePattern = createProceduralPattern(preset === "none" ? "checker" : preset, groundColor);
+      }
+    }
+
+    function clearObjectTexture() {
+      const obj = getSelected();
+      if (!obj) return;
+      obj.material.texturePreset = "none";
+      obj.material.texturePattern = null;
+      obj.material.textureImage = null;
+      document.getElementById("texturePreset").value = "none";
+      renderInspector();
+    }
+
+    function parseScriptBehavior(code) {
+      const extractNum = (regex, fallback) => {
+        const m = code.match(regex);
+        return m ? parseFloat(m[1]) : fallback;
+      };
+      return {
+        moveSpeed: extractNum(/moveSpeed\s*=\s*([+-]?\d+(?:\.\d+)?)/, 180),
+        jumpForce: extractNum(/jumpForce\s*=\s*([+-]?\d+(?:\.\d+)?)/, 280),
+        gravity: extractNum(/gravity\s*=\s*([+-]?\d+(?:\.\d+)?)/, 650),
+        isAutoPatrol: code.includes("sin(t)") || code.includes("setAutoPatrolXZ")
+      };
+    }
+
+    function addObject(type, customName = null, customSprite = null, customShapeSpec = null) {
+      const names = {
+        character: "شخصية_اللاعب",
+        cube: "مكعب_تصادم",
+        platform: "منصة_مرتفعة",
+        terrain: "سطح_حفر",
+        modeled: "مجسم_موديلينج"
+      };
+      const id = "obj_" + Date.now() + "_" + Math.floor(Math.random() * 999);
+      const isStaticBox = type === "cube" || type === "platform";
+
+      const width = customShapeSpec ? customShapeSpec.width : (type === "platform" ? 90 : 38);
+      const height = customShapeSpec ? customShapeSpec.height : (type === "platform" ? 24 : 44);
+      const depth = customShapeSpec ? customShapeSpec.depth : (type === "platform" ? 90 : 38);
+
+      const newObj = {
+        id,
+        name: customName || `${names[type] || "كائن"}_${objects.length + 1}`,
+        type,
+        x: type === "cube" ? 85 : type === "platform" ? -90 : 0,
+        y: type === "platform" ? 28 : 0,
+        z: 0,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+        width,
+        height,
+        depth,
+        shapeType: customShapeSpec ? customShapeSpec.shapeType : "box",
+        taper: customShapeSpec ? customShapeSpec.taper : 1.0,
+        bevel: customShapeSpec ? customShapeSpec.bevel : 0.15,
+        twist: customShapeSpec ? customShapeSpec.twist : 0,
+        bulge: customShapeSpec ? customShapeSpec.bulge : 1.0,
+        shearX: customShapeSpec ? customShapeSpec.shearX : 0,
+        shearZ: customShapeSpec ? customShapeSpec.shearZ : 0,
+        segments: customShapeSpec ? customShapeSpec.segments : 2,
+        rotY: customShapeSpec ? customShapeSpec.rotY : 0,
+        onGround: true,
+        useGravity: !isStaticBox,
+        useCollision: true,
+        sculptMode: "none",
+        sculptDepth: 12,
+        spriteImage: customSprite,
+        material: {
+          name: "Default_Mat",
+          color: customShapeSpec
+            ? customShapeSpec.color
+            : (type === "character" ? "#3fb950" : type === "platform" ? "#d29922" : "#58a6ff"),
+          shine: 60,
+          texturePreset: "none",
+          texturePattern: null,
+          textureImage: null
+        },
+        mandatoryScript: null,
+        behavior: null,
+        keyframes: []
+      };
+
+      objects.push(newObj);
+      selectObject(id);
+      return newObj;
+    }
+
+    function deleteSelectedObject() {
+      if (!selectedId) return;
+      objects = objects.filter(o => o.id !== selectedId);
+      if (objects.length > 0) {
+        selectObject(objects[objects.length - 1].id);
+      } else {
+        selectedId = null;
+        renderSceneList();
+        renderInspector();
+        renderKeyframes();
+        updateStatusLabels();
+      }
+    }
+
+    function deleteAllObjects() {
+      objects = [];
+      selectedId = null;
+      isTimelinePlaying = false;
+      renderSceneList();
+      renderInspector();
+      renderKeyframes();
+      updateStatusLabels();
+    }
+
+    function selectObject(id) {
+      selectedId = id;
+      const obj = getSelected();
+      if (!obj) return;
+      syncAxisInputs(obj);
+      document.getElementById("useGravity").checked = obj.useGravity;
+      document.getElementById("useCollision").checked = obj.useCollision;
+      document.getElementById("sculptMode").value = obj.sculptMode;
+      document.getElementById("sculptDepth").value = obj.sculptDepth;
+      document.getElementById("sculptDepthVal").innerText = obj.sculptDepth;
+      document.getElementById("matName").value = obj.material.name;
+      document.getElementById("matColor").value = obj.material.color;
+      document.getElementById("matShine").value = obj.material.shine;
+      document.getElementById("matShineVal").innerText = obj.material.shine;
+      document.getElementById("texturePreset").value =
+        obj.material.texturePreset && obj.material.texturePreset !== "custom_image"
+          ? obj.material.texturePreset
+          : "none";
+
+      if (obj.mandatoryScript) {
+        document.getElementById("scriptLang").value = obj.mandatoryScript.language;
+        document.getElementById("scriptCode").value = obj.mandatoryScript.code;
+      } else {
+        document.getElementById("scriptLang").value = "";
+        document.getElementById("scriptCode").value = "";
+      }
+
+      renderSceneList();
+      renderInspector();
+      renderKeyframes();
+      updateStatusLabels();
+    }
+
+    function getSelected() {
+      return objects.find(o => o.id === selectedId) || null;
+    }
+
+    function syncAxisInputs(obj) {
+      if (!obj) return;
+      document.getElementById("posX").value = Math.round(obj.x * 10) / 10;
+      document.getElementById("posY").value = Math.round(obj.y * 10) / 10;
+      document.getElementById("posZ").value = Math.round(obj.z * 10) / 10;
+    }
+
+    function togglePhysicsFlags() {
+      const obj = getSelected();
+      if (!obj) return;
+      obj.useGravity = document.getElementById("useGravity").checked;
+      obj.useCollision = document.getElementById("useCollision").checked;
+    }
+
+    function renderSceneList() {
+      const list = document.getElementById("sceneList");
+      list.innerHTML = "";
+      if (objects.length === 0) {
+        list.innerHTML = `<div style="font-size:12px; color:#8b949e; padding:8px;">المشهد فارغ — أضف كائناً أو مجسماً.</div>`;
+        return;
+      }
+      objects.forEach(obj => {
+        const div = document.createElement("div");
+        div.className = "scene-item" + (obj.id === selectedId ? " active" : "");
+        div.onclick = () => selectObject(obj.id);
+        const tag = obj.mandatoryScript ? ` [${obj.mandatoryScript.language.toUpperCase()} ✓]` : "";
+        div.innerHTML = `<span>${obj.name}</span><span style="font-size:11px; color:#3fb950;">${tag}</span>`;
+        list.appendChild(div);
+      });
+    }
+
+    function renderInspector() {
+      const obj = getSelected();
+      const box = document.getElementById("inspectorBody");
+      if (!obj) {
+        box.innerHTML = "لا يوجد كائن محدد حالياً.";
+        return;
+      }
+      box.innerHTML = `
+        <div><strong>الاسم:</strong> ${obj.name} (Shape: ${obj.shapeType})</div>
+        <div><strong>الأبعاد:</strong> W:${obj.width} | H:${obj.height} | D:${obj.depth}</div>
+        <div><strong>السكريبت الإجباري:</strong> ${
+          obj.mandatoryScript
+            ? `<span style="color:#3fb950;">مطبّق (${obj.mandatoryScript.language.toUpperCase()}) ✓</span>`
+            : `<span style="color:#ffa657;">غير مضاف بعد</span>`
+        }</div>
+        <div><strong>الإحداثيات:</strong> X: <strong>${obj.x.toFixed(1)}</strong> | Y: <strong>${obj.y.toFixed(1)}</strong> | Z: <strong>${obj.z.toFixed(1)}</strong></div>
+      `;
+    }
+
+    function updateSelectedTransform() {
+      const obj = getSelected();
+      if (!obj) return;
+      obj.x = parseFloat(document.getElementById("posX").value) || 0;
+      obj.y = parseFloat(document.getElementById("posY").value) || 0;
+      obj.z = parseFloat(document.getElementById("posZ").value) || 0;
+      obj.vy = 0;
+      renderInspector();
+    }
+
+    function updateSculpt() {
+      const obj = getSelected();
+      if (!obj) return;
+      obj.sculptMode = document.getElementById("sculptMode").value;
+      obj.sculptDepth = parseInt(document.getElementById("sculptDepth").value, 10);
+      document.getElementById("sculptDepthVal").innerText = obj.sculptDepth;
+    }
+
+    function applyMaterial() {
+      const obj = getSelected();
+      if (!obj) return;
+      const shine = parseInt(document.getElementById("matShine").value, 10);
+      document.getElementById("matShineVal").innerText = shine;
+      obj.material.name = document.getElementById("matName").value || "Custom_Mat";
+      obj.material.color = document.getElementById("matColor").value;
+      obj.material.shine = shine;
+      if (obj.material.texturePreset && obj.material.texturePreset !== "none" && obj.material.texturePreset !== "custom_image") {
+        obj.material.texturePattern = createProceduralPattern(obj.material.texturePreset, obj.material.color);
+      }
+    }
+
+    function loadPresetForLanguage() {
+      const lang = document.getElementById("scriptLang").value;
+      if (lang && PRESETS[lang]) {
+        document.getElementById("scriptCode").value = PRESETS[lang].move;
+      }
+    }
+
+    function loadPreset(kind) {
+      const lang = document.getElementById("scriptLang").value;
+      if (!lang) {
+        alert("إجباري: اختر أولاً لغة السكريبت (Java أو C++).");
+        return;
+      }
+      document.getElementById("scriptCode").value = PRESETS[lang][kind];
+    }
+
+    async function applyScriptMandatory() {
+      const obj = getSelected();
+      const lang = document.getElementById("scriptLang").value;
+      const code = document.getElementById("scriptCode").value;
+      const msgEl = document.getElementById("scriptMsg");
+
+      if (!obj) {
+        msgEl.style.color = "#f85149";
+        msgEl.innerText = "اختر كائناً أولاً.";
+        return;
+      }
+      if (lang !== "java" && lang !== "cpp") {
+        msgEl.style.color = "#f85149";
+        msgEl.innerText = "يجب اختيار لغة Java أو C++ أولاً.";
+        return;
+      }
+
+      const res = await fetch("/api/apply-script-mandatory", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          target_object_id: obj.id,
+          target_object_name: obj.name,
+          language: lang,
+          code
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        msgEl.style.color = "#f85149";
+        msgEl.innerText = data.error || "خطأ أثناء تطبيق السكريبت.";
+        return;
+      }
+
+      obj.mandatoryScript = data.binding;
+      obj.behavior = parseScriptBehavior(code);
+      msgEl.style.color = "#3fb950";
+      msgEl.innerText = data.message;
+      renderSceneList();
+      renderInspector();
+      updateStatusLabels();
+    }
+
+    function holdControl(dir, active) {
+      inputState[dir] = active;
+    }
+
+    function triggerJump() {
+      const obj = getSelected();
+      if (!obj) return;
+      const b = obj.behavior || { jumpForce: 280 };
+      if (obj.onGround) {
+        obj.vy = b.jumpForce;
+        obj.onGround = false;
+      }
+    }
+
+    function insertKeyframe() {
+      const obj = getSelected();
+      if (!obj) return;
+      const frame = parseInt(document.getElementById("timelineSlider").value, 10);
+      obj.keyframes = obj.keyframes.filter(k => k.frame !== frame);
+      obj.keyframes.push({ frame, x: obj.x, y: obj.y, z: obj.z });
+      obj.keyframes.sort((a, b) => a.frame - b.frame);
+      renderKeyframes();
+    }
+
+    function clearKeyframes() {
+      const obj = getSelected();
+      if (!obj) return;
+      obj.keyframes = [];
+      isTimelinePlaying = false;
+      renderKeyframes();
+    }
+
+    function renderKeyframes() {
+      const obj = getSelected();
+      const strip = document.getElementById("keyframeStrip");
+      if (!obj || obj.keyframes.length === 0) {
+        strip.innerHTML = `<span style="font-size:11px; color:#8b949e;">لا توجد Keyframes بعد — حرّك الكائن واضغط "+ إضافة Keyframe" أو استخدم AI.</span>`;
+        return;
+      }
+      strip.innerHTML = obj.keyframes
+        .map(k => `<span class="kf-chip" onclick="scrubTimeline(${k.frame})">Frame ${k.frame} (X:${Math.round(k.x)}, Y:${Math.round(k.y)}, Z:${Math.round(k.z)})</span>`)
+        .join("");
+    }
+
+    function scrubTimeline(frameVal) {
+      currentFrame = parseInt(frameVal, 10);
+      document.getElementById("timelineSlider").value = currentFrame;
+      document.getElementById("currentFrameLabel").innerText = currentFrame;
+      applyKeyframeInterpolation(getSelected(), currentFrame);
+    }
+
+    function toggleTimelinePlay() {
+      const obj = getSelected();
+      if (!obj || obj.keyframes.length < 2) {
+        alert("أضف على الأقل 2 Keyframe أو اضغط زر AI أنيميشن تلقائي أولاً.");
+        return;
+      }
+      isTimelinePlaying = !isTimelinePlaying;
+    }
+
+    function generateAIAnimation() {
+      const obj = getSelected();
+      if (!obj) return;
+      const baseX = obj.x;
+      const baseZ = obj.z;
+      obj.keyframes = [
+        { frame: 0, x: baseX - 50, y: 0, z: baseZ },
+        { frame: 30, x: baseX, y: 65, z: baseZ + 25 },
+        { frame: 60, x: baseX + 55, y: 0, z: baseZ },
+        { frame: 90, x: baseX, y: 45, z: baseZ - 25 },
+        { frame: 120, x: baseX - 50, y: 0, z: baseZ }
+      ];
+      currentFrame = 0;
+      isTimelinePlaying = true;
+      renderKeyframes();
+    }
+
+    function applyKeyframeInterpolation(obj, frame) {
+      if (!obj || obj.keyframes.length === 0) return;
+      const kfs = obj.keyframes;
+      if (frame <= kfs[0].frame) {
+        obj.x = kfs[0].x; obj.y = kfs[0].y; obj.z = kfs[0].z;
+        return;
+      }
+      if (frame >= kfs[kfs.length - 1].frame) {
+        const last = kfs[kfs.length - 1];
+        obj.x = last.x; obj.y = last.y; obj.z = last.z;
+        return;
+      }
+      for (let i = 0; i < kfs.length - 1; i++) {
+        const a = kfs[i];
+        const b = kfs[i + 1];
+        if (frame >= a.frame && frame <= b.frame) {
+          const rawT = (frame - a.frame) / (b.frame - a.frame);
+          const t = rawT * rawT * (3 - 2 * rawT);
+          obj.x = a.x + (b.x - a.x) * t;
+          obj.y = a.y + (b.y - a.y) * t;
+          obj.z = a.z + (b.z - a.z) * t;
+          break;
+        }
+      }
+    }
+
+    function updatePhysics(dt) {
+      timeElapsed += dt;
+
+      updateCustomCinematic(dt);
+      updateActionEffects(dt);
+
+      if (tapImpulseTimer > 0) {
+        tapImpulseTimer -= dt;
+        if (tapImpulseTimer <= 0) {
+          inputState.left = false;
+          inputState.right = false;
+        }
+      }
+
+      if (isTimelinePlaying) {
+        timelineTimer += dt * 36;
+        if (timelineTimer >= 1) {
+          currentFrame = (currentFrame + Math.floor(timelineTimer)) % 121;
+          timelineTimer = 0;
+          document.getElementById("timelineSlider").value = currentFrame;
+          document.getElementById("currentFrameLabel").innerText = currentFrame;
+          applyKeyframeInterpolation(getSelected(), currentFrame);
+        }
+      }
+
+      const rightX = Math.cos(camYaw);
+      const rightZ = -Math.sin(camYaw);
+      const fwdX = Math.sin(camYaw);
+      const fwdZ = Math.cos(camYaw);
+
+      objects.forEach(obj => {
+        const isSel = obj.id === selectedId;
+        const b = obj.behavior || { moveSpeed: 180, jumpForce: 280, gravity: 650, isAutoPatrol: false };
+
+        if (isSel && !isTimelinePlaying) {
+          const horizInput = (inputState.right ? 1 : 0) - (inputState.left ? 1 : 0);
+          const vertInput = (inputState.forward ? 1 : 0) - (inputState.backward ? 1 : 0);
+
+          const targetVx = (horizInput * rightX + vertInput * fwdX) * b.moveSpeed;
+          const targetVz = (horizInput * rightZ + vertInput * fwdZ) * b.moveSpeed;
+
+          const smoothFactor = Math.min(1, dt * 14);
+          obj.vx += (targetVx - obj.vx) * smoothFactor;
+          obj.vz += (targetVz - obj.vz) * smoothFactor;
+        } else if (obj.mandatoryScript && b.isAutoPatrol && !isTimelinePlaying) {
+          const tx = Math.sin(timeElapsed * 1.4) * 140;
+          const tz = Math.cos(timeElapsed * 1.4) * 140;
+          obj.vx = (tx - obj.x) * 4;
+          obj.vz = (tz - obj.z) * 4;
+        } else {
+          obj.vx *= 0.85;
+          obj.vz *= 0.85;
+        }
+
+        if (obj.useGravity && !isTimelinePlaying) {
+          obj.vy -= b.gravity * dt;
+        }
+
+        const prevX = obj.x;
+        const prevY = obj.y;
+        const prevZ = obj.z;
+
+        obj.x += obj.vx * dt;
+        obj.z += obj.vz * dt;
+        obj.y += obj.vy * dt;
+
+        const limit = groundHalfSize - obj.width * 0.5;
+        obj.x = Math.max(-limit, Math.min(limit, obj.x));
+        obj.z = Math.max(-limit, Math.min(limit, obj.z));
+
+        let collidedLabel = obj.y <= 0 ? "على الأرضية (Ground)" : "في الهواء";
+
+        if (obj.y <= 0) {
+          obj.y = 0;
+          obj.vy = 0;
+          obj.onGround = true;
+          collidedLabel = "على الأرضية (Ground)";
+        } else {
+          obj.onGround = false;
+        }
+
+        if (obj.useCollision) {
+          objects.forEach(other => {
+            if (other.id === obj.id || !other.useCollision) return;
+
+            const overlapX = Math.abs(obj.x - other.x) < (obj.width + other.width) * 0.5;
+            const overlapZ = Math.abs(obj.z - other.z) < (obj.depth + other.depth) * 0.5;
+            const otherTop = other.y + other.height;
+            const objTop = obj.y + obj.height;
+            const overlapY = obj.y < otherTop && objTop > other.y;
+
+            if (overlapX && overlapY && overlapZ) {
+              if (prevY >= otherTop - 4 && obj.vy <= 0) {
+                obj.y = otherTop;
+                obj.vy = 0;
+                obj.onGround = true;
+                collidedLabel = `تصادم علوي مع: ${other.name}`;
+              } else {
+                obj.x = prevX;
+                obj.z = prevZ;
+                obj.vx = 0;
+                obj.vz = 0;
+                collidedLabel = `تصادم جانبي مع: ${other.name}`;
+              }
+            }
+          });
+        }
+
+        if (isSel) {
+          document.getElementById("collisionStatus").innerText = collidedLabel;
+          if (Math.abs(obj.vx) > 0.5 || Math.abs(obj.vy) > 0.5 || Math.abs(obj.vz) > 0.5 || isTimelinePlaying) {
+            syncAxisInputs(obj);
+            renderInspector();
+            updateStatusLabels();
+          }
+        }
+      });
+
+      const activeObj = getSelected();
+      if (camFollowEnabled && activeObj) {
+        const followLerp = Math.min(1, dt * 9);
+        camFocusX += (activeObj.x - camFocusX) * followLerp;
+        camFocusY += (activeObj.y * 0.45 - camFocusY) * followLerp;
+        camFocusZ += (activeObj.z - camFocusZ) * followLerp;
+      } else if (!camFollowEnabled) {
+        const returnLerp = Math.min(1, dt * 8);
+        camFocusX += (0 - camFocusX) * returnLerp;
+        camFocusY += (0 - camFocusY) * returnLerp;
+        camFocusZ += (0 - camFocusZ) * returnLerp;
+      }
+    }
+
+    function updateStatusLabels() {
+      const obj = getSelected();
+      document.getElementById("activeObjLabel").innerText =
+        obj ? `${obj.name} (X:${obj.x.toFixed(0)}, Y:${obj.y.toFixed(0)}, Z:${obj.z.toFixed(0)})` : "لا يوجد";
+      const mEl = document.getElementById("mandatoryStatus");
+      mEl.innerText = obj && obj.mandatoryScript ? `مطبّق (${obj.mandatoryScript.language.toUpperCase()}) ✓` : "غير مربوط";
+    }
+
+    function drawSkybox(ctx, width, height) {
+      const grad = ctx.createLinearGradient(0, 0, 0, height);
+      const sunOffsetX = ((camYaw * 160) % width + width) % width;
+      const horizonY = height * (0.52 + camPitch * 0.25);
+
+      if (skyboxType === "day") {
+        grad.addColorStop(0, "#1d63b8");
+        grad.addColorStop(0.55, "#6cb4ee");
+        grad.addColorStop(1, "#cbe4f9");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = "rgba(255, 250, 210, 0.9)";
+        ctx.beginPath();
+        ctx.arc(sunOffsetX, Math.max(55, horizonY - 120), 26, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (skyboxType === "sunset") {
+        grad.addColorStop(0, "#231942");
+        grad.addColorStop(0.45, "#be3144");
+        grad.addColorStop(0.8, "#f08a5d");
+        grad.addColorStop(1, "#f9ed69");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = "rgba(255, 215, 110, 0.85)";
+        ctx.beginPath();
+        ctx.arc(sunOffsetX, Math.max(85, horizonY - 40), 34, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (skyboxType === "night") {
+        grad.addColorStop(0, "#040711");
+        grad.addColorStop(0.65, "#0d1b2a");
+        grad.addColorStop(1, "#1b263b");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = "#ffffff";
+        SKY_STARS.forEach(s => {
+          const sx = ((s.rx * width + camYaw * 140) % width + width) % width;
+          const sy = s.ry * height;
+          ctx.beginPath();
+          ctx.arc(sx, sy, s.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      } else if (skyboxType === "cyber") {
+        grad.addColorStop(0, "#0b032d");
+        grad.addColorStop(0.55, "#2b1055");
+        grad.addColorStop(1, "#7597de");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+      } else {
+        grad.addColorStop(0, "#090c10");
+        grad.addColorStop(1, "#161b22");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+      }
+    }
+
+    function projectCustom3D(x, y, z, cx, cy, yaw, pitch, zoom, focus = { x: 0, y: 0, z: 0 }) {
+      const dx = x - focus.x;
+      const dy = y - focus.y;
+      const dz = z - focus.z;
+
+      const cosY = Math.cos(yaw);
+      const sinY = Math.sin(yaw);
+      const rx = dx * cosY - dz * sinY;
+      const rz = dx * sinY + dz * cosY;
+
+      const cosP = Math.cos(pitch);
+      const sinP = Math.sin(pitch);
+      const ry = dy * cosP - rz * sinP;
+      const finalZ = dy * sinP + rz * cosP;
+
+      const fov = 520 * zoom;
+      const dist = fov + finalZ;
+      const scale = dist > 60 ? fov / dist : 0.1;
+
+      return {
+        sx: cx + rx * scale,
+        sy: cy - ry * scale,
+        scale,
+        depth: finalZ
+      };
+    }
+
+    function project3D(x, y, z, cx, cy) {
+      return projectCustom3D(x, y, z, cx, cy, camYaw, camPitch, camZoom, {
+        x: camFocusX,
+        y: camFocusY,
+        z: camFocusZ
+      });
+    }
+
+    function rotateLocalXZ(lx, lz, rotDeg) {
+      if (!rotDeg) return { x: lx, z: lz };
+      const rad = (rotDeg * Math.PI) / 180;
+      const c = Math.cos(rad);
+      const s = Math.sin(rad);
+      return {
+        x: lx * c - lz * s,
+        z: lx * s + lz * c
+      };
+    }
+
+    function drawShapedMesh(ctx, spec, cx, cy, isSelected, yaw, pitch, zoom, showWireframe = false, focus = { x: 0, y: 0, z: 0 }) {
+      const hw = spec.width * 0.5;
+      const hd = spec.depth * 0.5;
+      const y0 = spec.y;
+      const y1 = spec.y + spec.height;
+      const rotY = spec.rotY || 0;
+      const shX = spec.shearX || 0;
+      const shZ = spec.shearZ || 0;
+      const twistDeg = spec.twist || 0;
+      const bulge = spec.bulge ?? 1.0;
+      const bevelAmt = spec.bevel ?? 0.15;
+
+      const shape = spec.shapeType || "box";
+      const isPyramid = shape === "pyramid";
+      const isWedge = shape === "wedge";
+      const isCrystal = shape === "crystal";
+      const isDome = shape === "dome";
+
+      const baseScale = isCrystal ? 0.25 : 1.0;
+      const topScale = isPyramid || isCrystal
+        ? 0.04
+        : (isDome ? 0.35 : Math.max(0.05, (spec.taper ?? 1.0) - bevelAmt * 0.25));
+
+      const pt = (lx, ly, lz, ratio = 0) => {
+        const bulgeFactor = 1 + Math.sin(ratio * Math.PI) * (bulge - 1);
+        const rTwist = rotateLocalXZ(lx * bulgeFactor, lz * bulgeFactor, twistDeg * ratio);
+        const r = rotateLocalXZ(rTwist.x, rTwist.z, rotY);
+        return projectCustom3D(
+          spec.x + r.x + shX * ratio,
+          ly,
+          spec.z + r.z + shZ * ratio,
+          cx,
+          cy,
+          yaw,
+          pitch,
+          zoom,
+          focus
+        );
+      };
+
+      const bhw = hw * baseScale;
+      const bhd = hd * baseScale;
+      const thw = hw * topScale;
+      const thd = hd * topScale;
+
+      const b0 = pt(-bhw, y0, -bhd, 0);
+      const b1 = pt(bhw, y0, -bhd, 0);
+      const b2 = pt(bhw, y0, bhd, 0);
+      const b3 = pt(-bhw, y0, bhd, 0);
+
+      const t0 = pt(-thw, y1, -thd, 1);
+      const t1 = pt(thw, y1, -thd, 1);
+      const t2 = isWedge ? pt(hw, y1, hd, 1) : pt(thw, y1, thd, 1);
+      const t3 = isWedge ? pt(-hw, y1, hd, 1) : pt(-thw, y1, thd, 1);
+
+      const pts = [b0, b1, b2, b3, t0, t1, t2, t3];
+      const fillPaint = spec.fillPattern || spec.color;
+
+      const drawFace = (indices, alpha) => {
+        ctx.beginPath();
+        ctx.moveTo(pts[indices[0]].sx, pts[indices[0]].sy);
+        for (let i = 1; i < indices.length; i++) {
+          ctx.lineTo(pts[indices[i]].sx, pts[indices[i]].sy);
+        }
+        ctx.closePath();
+        ctx.fillStyle = fillPaint;
+        ctx.globalAlpha = alpha;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = isSelected ? "#ffffff" : "#161b22";
+        ctx.lineWidth = isSelected ? 2 : 1;
+        ctx.stroke();
+      };
+
+      drawFace([0, 1, 5, 4], 0.8);
+      drawFace([1, 2, 6, 5], 0.88);
+      drawFace([2, 3, 7, 6], 0.82);
+      drawFace([3, 0, 4, 7], 0.76);
+      drawFace([4, 5, 6, 7], 0.98);
+
+      const segs = spec.segments || 1;
+      if (showWireframe && segs > 1) {
+        ctx.strokeStyle = "rgba(121, 192, 255, 0.65)";
+        ctx.lineWidth = 1;
+        for (let s = 1; s < segs; s++) {
+          const ratio = s / segs;
+          const ly = y0 + (y1 - y0) * ratio;
+          const curHw = bhw + (thw - bhw) * ratio;
+          const curHd = bhd + (thd - bhd) * ratio;
+
+          const r0 = pt(-curHw, ly, -curHd, ratio);
+          const r1 = pt(curHw, ly, -curHd, ratio);
+          const r2 = pt(curHw, ly, curHd, ratio);
+          const r3 = pt(-curHw, ly, curHd, ratio);
+
+          ctx.beginPath();
+          ctx.moveTo(r0.sx, r0.sy); ctx.lineTo(r1.sx, r1.sy); ctx.lineTo(r2.sx, r2.sy); ctx.lineTo(r3.sx, r3.sy);
+          ctx.closePath();
+          ctx.stroke();
+        }
+      }
+    }
+
+    function draw3DBox(ctx, obj, cx, cy, isSelected) {
+      const shadowCenter = project3D(obj.x, 0, obj.z, cx, cy);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+      ctx.beginPath();
+      ctx.ellipse(
+        shadowCenter.sx,
+        shadowCenter.sy,
+        (obj.width * 0.5) * shadowCenter.scale,
+        (obj.depth * 0.28) * shadowCenter.scale,
+        0,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+
+      if (obj.spriteImage) {
+        const topCenter = project3D(obj.x, obj.y + obj.height * 0.5, obj.z, cx, cy);
+        const w = obj.width * 1.45 * topCenter.scale;
+        const h = obj.height * 1.45 * topCenter.scale;
+        ctx.drawImage(obj.spriteImage, topCenter.sx - w / 2, topCenter.sy - h / 2, w, h);
+        if (isSelected) {
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(topCenter.sx - w / 2, topCenter.sy - h / 2, w, h);
+        }
+        return;
+      }
+
+      drawShapedMesh(
+        ctx,
+        {
+          x: obj.x,
+          y: obj.y,
+          z: obj.z,
+          width: obj.width,
+          height: obj.height,
+          depth: obj.depth,
+          shapeType: obj.shapeType || "box",
+          taper: obj.taper ?? 1.0,
+          bevel: obj.bevel ?? 0.15,
+          twist: obj.twist ?? 0,
+          bulge: obj.bulge ?? 1.0,
+          shearX: obj.shearX || 0,
+          shearZ: obj.shearZ || 0,
+          rotY: obj.rotY || 0,
+          segments: obj.segments || 1,
+          color: obj.material.color,
+          fillPattern: obj.material.texturePattern
+        },
+        cx,
+        cy,
+        isSelected,
+        camYaw,
+        camPitch,
+        camZoom,
+        false,
+        { x: camFocusX, y: camFocusY, z: camFocusZ }
+      );
+
+      const topCenter = project3D(obj.x, obj.y + obj.height, obj.z, cx, cy);
+      if (obj.sculptMode === "carve") {
+        ctx.fillStyle = "#090c10";
+        ctx.beginPath();
+        ctx.arc(topCenter.sx, topCenter.sy, Math.min(18, obj.sculptDepth * 0.6) * topCenter.scale, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (obj.sculptMode === "extrude") {
+        ctx.strokeStyle = "#ffa657";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(topCenter.sx - 12 * topCenter.scale, topCenter.sy - 12 * topCenter.scale, 24 * topCenter.scale, 24 * topCenter.scale);
+      }
+    }
+
+    let lastTimestamp = performance.now();
+    function renderLoop(now) {
+      const dt = Math.min(0.05, (now - lastTimestamp) / 1000);
+      lastTimestamp = now;
+
+      updatePhysics(dt);
+
+      const canvas = document.getElementById("view3d");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawSkybox(ctx, canvas.width, canvas.height);
+
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2 + 55;
+
+      // الأرضية واضحة بالكامل في السين واللعبة
+      const gCorners = [
+        project3D(-groundHalfSize, 0, -groundHalfSize, cx, cy),
+        project3D(groundHalfSize, 0, -groundHalfSize, cx, cy),
+        project3D(groundHalfSize, 0, groundHalfSize, cx, cy),
+        project3D(-groundHalfSize, 0, groundHalfSize, cx, cy)
+      ];
+      ctx.beginPath();
+      ctx.moveTo(gCorners[0].sx, gCorners[0].sy);
+      ctx.lineTo(gCorners[1].sx, gCorners[1].sy);
+      ctx.lineTo(gCorners[2].sx, gCorners[2].sy);
+      ctx.lineTo(gCorners[3].sx, gCorners[3].sy);
+      ctx.closePath();
+      ctx.fillStyle = groundTexturePattern || groundColor;
+      ctx.fill();
+      ctx.strokeStyle = "#94a3b8";
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      const step = groundHalfSize > 1200 ? 150 : (groundHalfSize > 700 ? 80 : 40);
+      ctx.lineWidth = 1.2;
+      for (let g = -groundHalfSize; g <= groundHalfSize; g += step) {
+        const p1 = project3D(g, 0, -groundHalfSize, cx, cy);
+        const p2 = project3D(g, 0, groundHalfSize, cx, cy);
+        ctx.strokeStyle = g === 0 ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.28)";
+        ctx.beginPath(); ctx.moveTo(p1.sx, p1.sy); ctx.lineTo(p2.sx, p2.sy); ctx.stroke();
+
+        const p3 = project3D(-groundHalfSize, 0, g, cx, cy);
+        const p4 = project3D(groundHalfSize, 0, g, cx, cy);
+        ctx.beginPath(); ctx.moveTo(p3.sx, p3.sy); ctx.lineTo(p4.sx, p4.sy); ctx.stroke();
+      }
+
+      const origin = project3D(0, 0, 0, cx, cy);
+      const axisX = project3D(110, 0, 0, cx, cy);
+      const axisY = project3D(0, 110, 0, cx, cy);
+      const axisZ = project3D(0, 0, 110, cx, cy);
+
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = "#ff7b72"; ctx.beginPath(); ctx.moveTo(origin.sx, origin.sy); ctx.lineTo(axisX.sx, axisX.sy); ctx.stroke();
+      ctx.strokeStyle = "#7ee787"; ctx.beginPath(); ctx.moveTo(origin.sx, origin.sy); ctx.lineTo(axisY.sx, axisY.sy); ctx.stroke();
+      ctx.strokeStyle = "#79c0ff"; ctx.beginPath(); ctx.moveTo(origin.sx, origin.sy); ctx.lineTo(axisZ.sx, axisZ.sy); ctx.stroke();
+
+      const sorted = [...objects].sort((a, b) => {
+        const da = project3D(a.x, a.y, a.z, cx, cy).depth;
+        const db = project3D(b.x, b.y, b.z, cx, cy).depth;
+        return db - da;
+      });
+
+      sorted.forEach(obj => {
+        draw3DBox(ctx, obj, cx, cy, obj.id === selectedId);
+        const labelPos = project3D(obj.x, obj.y + obj.height + 14, obj.z, cx, cy);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(obj.name, labelPos.sx, labelPos.sy);
+      });
+
+      drawActionEffects(ctx, cx, cy);
+
+      requestAnimationFrame(renderLoop);
+    }
+
+    function syncModelVals() {
+      document.getElementById("modWVal").innerText = document.getElementById("modWidth").value;
+      document.getElementById("modHVal").innerText = document.getElementById("modHeight").value;
+      document.getElementById("modDVal").innerText = document.getElementById("modDepth").value;
+      document.getElementById("modTaperVal").innerText = document.getElementById("modTaper").value;
+      document.getElementById("modBevelVal").innerText = document.getElementById("modBevel").value;
+      document.getElementById("modTwistVal").innerText = document.getElementById("modTwist").value;
+      document.getElementById("modBulgeVal").innerText = document.getElementById("modBulge").value;
+      document.getElementById("modShearXVal").innerText = document.getElementById("modShearX").value;
+      document.getElementById("modShearZVal").innerText = document.getElementById("modShearZ").value;
+      document.getElementById("modSegVal").innerText = document.getElementById("modSegments").value;
+      document.getElementById("modRotYVal").innerText = document.getElementById("modRotY").value;
+      drawModelPreview();
+    }
+
+    function applyQuickExtrude() {
+      const hInput = document.getElementById("modHeight");
+      hInput.value = Math.min(160, parseInt(hInput.value, 10) + 15);
+      syncModelVals();
+    }
+
+    function applyQuickBevel() {
+      const bInput = document.getElementById("modBevel");
+      bInput.value = Math.min(0.45, Math.round((parseFloat(bInput.value) + 0.05) * 100) / 100);
+      syncModelVals();
+    }
+
+    function applyQuickSubdivide() {
+      const sInput = document.getElementById("modSegments");
+      sInput.value = Math.min(8, parseInt(sInput.value, 10) + 1);
+      syncModelVals();
+    }
+
+    function flipModelShearX() {
+      const shInput = document.getElementById("modShearX");
+      shInput.value = -(parseFloat(shInput.value) || 20);
+      syncModelVals();
+    }
+
+    function resetModelParams() {
+      document.getElementById("modelShapeType").value = "box";
+      document.getElementById("modWidth").value = 50;
+      document.getElementById("modHeight").value = 60;
+      document.getElementById("modDepth").value = 50;
+      document.getElementById("modTaper").value = 0.75;
+      document.getElementById("modBevel").value = 0.15;
+      document.getElementById("modTwist").value = 0;
+      document.getElementById("modBulge").value = 1.0;
+      document.getElementById("modShearX").value = 0;
+      document.getElementById("modShearZ").value = 0;
+      document.getElementById("modSegments").value = 3;
+      document.getElementById("modRotY").value = 0;
+      syncModelVals();
+    }
+
+    function drawModelPreview() {
+      const canvas = document.getElementById("modelPreviewCanvas");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2 + 50;
+
+      ctx.strokeStyle = "#21262d";
+      for (let g = -160; g <= 160; g += 40) {
+        const p1 = projectCustom3D(g, 0, -160, cx, cy, modYaw, modPitch, 1.0);
+        const p2 = projectCustom3D(g, 0, 160, cx, cy, modYaw, modPitch, 1.0);
+        ctx.beginPath(); ctx.moveTo(p1.sx, p1.sy); ctx.lineTo(p2.sx, p2.sy); ctx.stroke();
+
+        const p3 = projectCustom3D(-160, 0, g, cx, cy, modYaw, modPitch, 1.0);
+        const p4 = projectCustom3D(160, 0, g, cx, cy, modYaw, modPitch, 1.0);
+        ctx.beginPath(); ctx.moveTo(p3.sx, p3.sy); ctx.lineTo(p4.sx, p4.sy); ctx.stroke();
+      }
+
+      const spec = {
+        x: 0,
+        y: 0,
+        z: 0,
+        width: parseFloat(document.getElementById("modWidth").value) || 50,
+        height: parseFloat(document.getElementById("modHeight").value) || 60,
+        depth: parseFloat(document.getElementById("modDepth").value) || 50,
+        shapeType: document.getElementById("modelShapeType").value,
+        taper: parseFloat(document.getElementById("modTaper").value) || 1.0,
+        bevel: parseFloat(document.getElementById("modBevel").value) || 0,
+        twist: parseFloat(document.getElementById("modTwist").value) || 0,
+        bulge: parseFloat(document.getElementById("modBulge").value) || 1.0,
+        shearX: parseFloat(document.getElementById("modShearX").value) || 0,
+        shearZ: parseFloat(document.getElementById("modShearZ").value) || 0,
+        segments: parseInt(document.getElementById("modSegments").value, 10) || 1,
+        rotY: parseFloat(document.getElementById("modRotY").value) || 0,
+        color: document.getElementById("modelColorInput").value,
+        fillPattern: null
+      };
+
+      drawShapedMesh(ctx, spec, cx, cy, true, modYaw, modPitch, 1.0, true);
+    }
+
+    function sendModeledShapeToScene() {
+      const spec = {
+        name: document.getElementById("modelNameInput").value.trim() || "مجسم_موديلينج",
+        width: parseFloat(document.getElementById("modWidth").value) || 50,
+        height: parseFloat(document.getElementById("modHeight").value) || 60,
+        depth: parseFloat(document.getElementById("modDepth").value) || 50,
+        shapeType: document.getElementById("modelShapeType").value,
+        taper: parseFloat(document.getElementById("modTaper").value) || 1.0,
+        bevel: parseFloat(document.getElementById("modBevel").value) || 0,
+        twist: parseFloat(document.getElementById("modTwist").value) || 0,
+        bulge: parseFloat(document.getElementById("modBulge").value) || 1.0,
+        shearX: parseFloat(document.getElementById("modShearX").value) || 0,
+        shearZ: parseFloat(document.getElementById("modShearZ").value) || 0,
+        segments: parseInt(document.getElementById("modSegments").value, 10) || 1,
+        rotY: parseFloat(document.getElementById("modRotY").value) || 0,
+        color: document.getElementById("modelColorInput").value
+      };
+      addObject("modeled", spec.name, null, spec);
+      switchTab("scene");
+    }
+
+    const modCanvas = document.getElementById("modelPreviewCanvas");
+    modCanvas.addEventListener("pointerdown", (e) => {
+      isModDragging = true;
+      modLastX = e.clientX;
+      modLastY = e.clientY;
+    });
+    window.addEventListener("pointerup", () => { isModDragging = false; });
+    window.addEventListener("pointermove", (e) => {
+      if (!isModDragging) return;
+      modYaw += (e.clientX - modLastX) * 0.01;
+      modPitch += (e.clientY - modLastY) * 0.01;
+      modLastX = e.clientX;
+      modLastY = e.clientY;
+      drawModelPreview();
+    });
+
+    const viewCanvas = document.getElementById("view3d");
+    viewCanvas.addEventListener("contextmenu", (e) => {
+      if (isPlayMode) {
+        e.preventDefault();
+        setMouseHidden(!isMouseHidden);
+      }
+    });
+
+    viewCanvas.addEventListener("pointerdown", (e) => {
+      isOrbiting = true;
+      pointerDownTime = performance.now();
+      pointerStartX = lastMouseX = e.clientX;
+      pointerStartY = lastMouseY = e.clientY;
+    });
+
+    window.addEventListener("pointerup", (e) => {
+      if (isOrbiting) {
+        const dtPress = performance.now() - pointerDownTime;
+        const distMoved = Math.hypot(e.clientX - pointerStartX, e.clientY - pointerStartY);
+        if (dtPress < 220 && distMoved < 10) {
+          const rect = viewCanvas.getBoundingClientRect();
+          const relX = e.clientX - rect.left;
+          if (relX >= rect.width * 0.5) {
+            inputState.right = true;
+            inputState.left = false;
+          } else {
+            inputState.left = true;
+            inputState.right = false;
+          }
+          tapImpulseTimer = 0.25;
+        }
+      }
+      isOrbiting = false;
+    });
+
+    window.addEventListener("pointermove", (e) => {
+      if (!isOrbiting) return;
+      isCinematicPlaying = false;
+      document.getElementById("cineRunBtn").innerText = "▶ تشغيل Cutscene اللي صممته";
+
+      const dx = e.clientX - lastMouseX;
+      const dy = e.clientY - lastMouseY;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+
+      camYaw += dx * 0.009;
+      camPitch += dy * 0.008;
+      syncCameraSliders();
+    });
+
+    viewCanvas.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      isCinematicPlaying = false;
+      camZoom = Math.max(0.5, Math.min(2.6, camZoom - e.deltaY * 0.001));
+      syncCameraSliders();
+    }, { passive: false });
+
+    window.addEventListener("keydown", (e) => {
+      const tag = document.activeElement?.tagName;
+      if (tag === "TEXTAREA" || tag === "INPUT" || tag === "SELECT") return;
+
+      if (isPlayMode && e.code === "Escape" && isMouseHidden) {
+        setMouseHidden(false);
+      }
+
+      if (!isPlayMode && (e.code === "Delete" || e.code === "Backspace")) {
+        deleteSelectedObject();
+        return;
+      }
+      if (e.code === "KeyD" || e.code === "ArrowRight") inputState.right = true;
+      if (e.code === "KeyA" || e.code === "ArrowLeft") inputState.left = true;
+      if (e.code === "KeyW" || e.code === "ArrowUp") inputState.forward = true;
+      if (e.code === "KeyS" || e.code === "ArrowDown") inputState.backward = true;
+      if (e.code === "KeyF") triggerFireAttack();
+      if (e.code === "ShiftLeft") triggerFastDash();
+      if (e.code === "KeyT") triggerTeleport();
+      if (e.code === "Space") {
+        e.preventDefault();
+        triggerJump();
+      }
+      if (!isPlayMode && e.code === "KeyI") insertKeyframe();
+    });
+
+    window.addEventListener("keyup", (e) => {
+      if (e.code === "KeyD" || e.code === "ArrowRight") inputState.right = false;
+      if (e.code === "KeyA" || e.code === "ArrowLeft") inputState.left = false;
+      if (e.code === "KeyW" || e.code === "ArrowUp") inputState.forward = false;
+      if (e.code === "KeyS" || e.code === "ArrowDown") inputState.backward = false;
+    });
+
+    const paintCanvas = document.getElementById("paintCanvas");
+    const pCtx = paintCanvas.getContext("2d");
+    let isPainting = false;
+    let paintTool = "brush";
+
+    function setPaintTool(tool) {
+      paintTool = tool;
+    }
+
+    function clearPaintCanvas() {
+      pCtx.clearRect(0, 0, paintCanvas.width, paintCanvas.height);
+    }
+
+    paintCanvas.addEventListener("pointerdown", (e) => {
+      isPainting = true;
+      drawOnPaintCanvas(e);
+    });
+    paintCanvas.addEventListener("pointerup", () => {
+      isPainting = false;
+      pCtx.beginPath();
+    });
+    paintCanvas.addEventListener("pointermove", (e) => {
+      if (isPainting) drawOnPaintCanvas(e);
+    });
+
+    function drawOnPaintCanvas(e) {
+      const rect = paintCanvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const size = parseInt(document.getElementById("brushSize").value, 10);
+
+      if (paintTool === "eraser") {
+        pCtx.clearRect(x - size / 2, y - size / 2, size, size);
+        return;
+      }
+
+      pCtx.fillStyle = document.getElementById("brushColor").value;
+      pCtx.beginPath();
+      pCtx.arc(x, y, size / 2, 0, Math.PI * 2);
+      pCtx.fill();
+    }
+
+    function sendPaintedCharacterTo3D(withAIAnim) {
+      const img = new Image();
+      img.onload = () => {
+        const name = document.getElementById("paintedCharName").value.trim() || "شخصية_مرسومة";
+        const created = addObject("character", name, img);
+        switchTab("scene");
+        if (withAIAnim) {
+          selectObject(created.id);
+          generateAIAnimation();
+        }
+      };
+      img.src = paintCanvas.toDataURL("image/png");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      if (objects.length === 0) {
+        addObject("character");
+        addObject("cube");
+        addObject("platform");
+        selectObject(objects[0].id);
+      }
+      syncCameraSliders();
+      renderCinematicWaypoints();
+      requestAnimationFrame(renderLoop);
+    });
+  </script>
+</body>
+</html>
